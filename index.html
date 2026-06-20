@@ -443,10 +443,35 @@
     <div id="stops-container">
       <div class="loading-row">Loading stops...</div>
     </div>
+
+    <div id="copy-route-section" style="display:none; margin-top:16px;">
+      <button class="btn btn-outline" style="width:100%" onclick="showCopyModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        Copy this route to another date
+      </button>
+    </div>
+
+    <div id="copy-modal" style="display:none; margin-top:12px;">
+      <div class="form-card">
+        <div class="section-label">Copy route to...</div>
+        <div class="field">
+          <label>Target date</label>
+          <input type="date" id="copy-target-date" autocomplete="off">
+        </div>
+        <div class="action-row">
+          <button class="btn btn-sm btn-green" onclick="executeCopyRoute()">Copy stops</button>
+          <button class="btn btn-sm btn-outline" onclick="hideCopyModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="panel" id="panel-add">
     <div class="form-card">
+      <div class="field">
+        <label>Schedule for date</label>
+        <input type="date" id="inp-date" autocomplete="off">
+      </div>
       <div class="field">
         <label>Customer or business name</label>
         <input type="text" id="inp-name" placeholder="e.g. Ahmed Store" autocomplete="off">
@@ -465,7 +490,7 @@
           <input type="text" id="inp-notes" placeholder="Call on arrival" autocomplete="off">
         </div>
       </div>
-      <button class="btn btn-primary" id="add-btn" onclick="submitStop()">Add stop to today's route</button>
+      <button class="btn btn-primary" id="add-btn" onclick="submitStop()">Add stop</button>
     </div>
   </div>
 
@@ -525,6 +550,8 @@ function switchTab(tab) {
   document.getElementById('panel-route').classList.toggle('active', tab === 'route');
   document.getElementById('panel-add').classList.toggle('active', tab === 'add');
   if (tab === 'add') {
+    // Default date picker to whatever date we're viewing
+    document.getElementById('inp-date').value = fmtDate(dateOffset);
     setTimeout(() => document.getElementById('inp-name').focus(), 100);
   }
 }
@@ -620,24 +647,29 @@ async function submitStop() {
 
   try {
     lastActionTime = Date.now();
+    const selectedDate = document.getElementById('inp-date').value || fmtDate(0);
     await apiPost({
       action: 'add',
       name,
+      date: selectedDate,
       address: document.getElementById('inp-addr').value.trim(),
       orderNumber: document.getElementById('inp-order').value.trim(),
       notes: document.getElementById('inp-notes').value.trim()
     });
     ['inp-name', 'inp-addr', 'inp-order', 'inp-notes'].forEach(id => document.getElementById(id).value = '');
-    showToast('Stop added');
-    dateOffset = 0;
-    document.getElementById('date-label').textContent = dateLabel(0);
+    showToast('Stop added for ' + selectedDate);
+    // Navigate to the date we just added a stop for
+    const today = fmtDate(0);
+    const diff = Math.round((new Date(selectedDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / (1000*60*60*24));
+    dateOffset = diff;
+    document.getElementById('date-label').textContent = dateLabel(dateOffset);
     await loadStops(true);
     switchTab('route');
   } catch (err) {
     showToast('Could not add stop — check connection');
   }
   btn.disabled = false;
-  btn.textContent = 'Add stop to today\'s route';
+  btn.textContent = 'Add stop';
 }
 
 async function updateField(id, fields) {
@@ -703,6 +735,50 @@ function resetPayment(id) {
   updateField(id, { Payment: '', PayMethod: '', ReceivedBy: '' });
 }
 
+function showCopyModal() {
+  // Default target to tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const y = tomorrow.getFullYear();
+  const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const day = String(tomorrow.getDate()).padStart(2, '0');
+  document.getElementById('copy-target-date').value = `${y}-${m}-${day}`;
+  document.getElementById('copy-modal').style.display = 'block';
+}
+function hideCopyModal() {
+  document.getElementById('copy-modal').style.display = 'none';
+}
+async function executeCopyRoute() {
+  const targetDate = document.getElementById('copy-target-date').value;
+  if (!targetDate) { showToast('Pick a target date'); return; }
+  const sourceStops = stops.filter(s => s.Name);
+  if (sourceStops.length === 0) { showToast('No stops to copy'); return; }
+
+  lastActionTime = Date.now();
+  let copied = 0;
+  for (const s of sourceStops) {
+    try {
+      await apiPost({
+        action: 'add',
+        date: targetDate,
+        name: s.Name || '',
+        address: s.Address || '',
+        orderNumber: '',
+        notes: s.Notes || ''
+      });
+      copied++;
+    } catch (err) { /* continue */ }
+  }
+  hideCopyModal();
+  showToast(copied + ' stop' + (copied !== 1 ? 's' : '') + ' copied to ' + targetDate);
+  // Navigate to the target date
+  const today = fmtDate(0);
+  const diff = Math.round((new Date(targetDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / (1000*60*60*24));
+  dateOffset = diff;
+  document.getElementById('date-label').textContent = dateLabel(dateOffset);
+  await loadStops(true);
+}
+
 let receivedByTimers = {};
 function setReceivedByLive(id, val) {
   lastActionTime = Date.now();
@@ -745,6 +821,10 @@ function renderStops() {
   document.getElementById('m-failed').textContent = failed;
   document.getElementById('m-unpaid').textContent = unpaid;
   document.getElementById('m-missing').textContent = missing;
+
+  // Show/hide copy route button
+  const copySection = document.getElementById('copy-route-section');
+  if (copySection) copySection.style.display = total > 0 ? 'block' : 'none';
 
   const container = document.getElementById('stops-container');
   const filtered = applyFilter(stops);
@@ -892,6 +972,7 @@ function escapeAttr(str) {
 }
 
 document.getElementById('date-label').textContent = dateLabel(0);
+document.getElementById('inp-date').value = fmtDate(0);
 loadStops();
 pollTimer = setInterval(() => loadStops(true), 15000);
 </script>
