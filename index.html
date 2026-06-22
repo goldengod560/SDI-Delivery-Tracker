@@ -135,6 +135,14 @@
     padding: 8px 4px;
     text-align: center;
   }
+  .metric.highlight-red {
+    background: var(--red-bg);
+    border: 1.5px solid var(--red);
+  }
+  .metric.highlight-blue {
+    background: #dbeafe;
+    border: 1.5px solid var(--blue);
+  }
   .metric-val { font-size: 18px; font-weight: 700; line-height: 1.1; }
   .metric-lbl { font-size: 10px; color: var(--text-soft); margin-top: 2px; font-weight: 500; }
 
@@ -460,11 +468,11 @@
   </div>
 
   <div class="summary-bar">
-    <div class="metric"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Stops</div></div>
-    <div class="metric"><div class="metric-val" id="m-delivered" style="color:var(--green)">0</div><div class="metric-lbl">Delivered</div></div>
-    <div class="metric"><div class="metric-val" id="m-failed" style="color:var(--red)">0</div><div class="metric-lbl">Missed</div></div>
-    <div class="metric"><div class="metric-val" id="m-unpaid" style="color:var(--red)">0</div><div class="metric-lbl">Unpaid</div></div>
-    <div class="metric"><div class="metric-val" id="m-missing" style="color:var(--purple)">0</div><div class="metric-lbl">Missing</div></div>
+    <div class="metric" id="metric-total"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Stops</div></div>
+    <div class="metric" id="metric-delivered"><div class="metric-val" id="m-delivered" style="color:var(--green)">0</div><div class="metric-lbl">Delivered</div></div>
+    <div class="metric" id="metric-failed"><div class="metric-val" id="m-failed" style="color:var(--red)">0</div><div class="metric-lbl">Missed</div></div>
+    <div class="metric highlight-red" id="metric-unpaid"><div class="metric-val" id="m-unpaid" style="color:var(--red)">0</div><div class="metric-lbl">Unpaid</div></div>
+    <div class="metric highlight-blue" id="metric-missing"><div class="metric-val" id="m-missing" style="color:var(--purple)">0</div><div class="metric-lbl">Missing</div></div>
   </div>
 
   <div class="tabs">
@@ -590,6 +598,7 @@ let isInteracting = false;
 let interactionTimer = null;
 let pendingPayId = null;
 let pendingPayMethod = '';
+let pendingChangeId = null;
 let receivedByTimers = {};
 const ACTION_COOLDOWN = 8000;
 
@@ -745,6 +754,7 @@ function markDelivered(id) { updateField(id, { Status: 'delivered', Reason: '' }
 function markFailed(id) { updateField(id, { Status: 'not-delivered' }); }
 function setReason(id, val) { updateField(id, { Reason: val }); }
 function markPaid(id, method) {
+  pendingChangeId = null;
   if (method === 'check' || method === 'money order') {
     pendingPayId = id;
     pendingPayMethod = method;
@@ -758,14 +768,14 @@ function confirmPayNumber(id) {
   const inp = document.getElementById('paynum-' + id);
   const num = inp ? inp.value.trim() : '';
   const label = pendingPayMethod + (num ? ' #' + num : '');
-  pendingPayId = null; pendingPayMethod = '';
+  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
   updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '' });
 }
-function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; renderStops(); }
-function markUnpaid(id) { updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
+function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null; renderStops(); }
+function markUnpaid(id) { pendingChangeId = null; updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
 function resetPayment(id) {
-  pendingPayId = null; pendingPayMethod = '';
-  updateField(id, { Payment: '', PayMethod: '', ReceivedBy: '' });
+  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = id;
+  renderStops();
 }
 
 function showCopyModal() {
@@ -850,15 +860,15 @@ function renderReceivedHint(id, val) {
 
 function applyFilter(list) {
   if (currentFilter === 'all') return list;
-  if (currentFilter === 'unpaid') return allStops.filter(s => s.Payment === 'unpaid');
-  if (currentFilter === 'missing') return allStops.filter(s => isMissing(s));
+  if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid');
+  if (currentFilter === 'missing') return list.filter(s => isMissing(s));
   return list.filter(s => s.Status === currentFilter);
 }
 
 function renderStops() {
-  const total = stops.length;
-  const delivered = stops.filter(s => s.Status === 'delivered').length;
-  const failed = stops.filter(s => s.Status === 'not-delivered').length;
+  const total = allStops.length;
+  const delivered = allStops.filter(s => s.Status === 'delivered').length;
+  const failed = allStops.filter(s => s.Status === 'not-delivered').length;
   const unpaid = allStops.filter(s => s.Payment === 'unpaid').length;
   const missing = allStops.filter(s => isMissing(s)).length;
   document.getElementById('m-total').textContent = total;
@@ -867,8 +877,12 @@ function renderStops() {
   document.getElementById('m-unpaid').textContent = unpaid;
   document.getElementById('m-missing').textContent = missing;
 
+  // toggle highlight borders based on whether there are items
+  document.getElementById('metric-unpaid').classList.toggle('highlight-red', unpaid > 0);
+  document.getElementById('metric-missing').classList.toggle('highlight-blue', missing > 0);
+
   const copySection = document.getElementById('copy-route-section');
-  if (copySection) copySection.style.display = total > 0 ? 'block' : 'none';
+  if (copySection) copySection.style.display = stops.length > 0 ? 'block' : 'none';
 
   const container = document.getElementById('stops-container');
   const filtered = applyFilter(stops);
@@ -936,7 +950,23 @@ function renderStops() {
 
     let payHtml = '';
     if (s.Status === 'delivered') {
-      if (!s.Payment) {
+      if (pendingChangeId === s.ID) {
+        payHtml = `<hr class="divider">
+          <div class="pay-label">Change payment to</div>
+          <div class="action-row-wrap">
+            <button class="btn btn-sm btn-green" data-action="payCash" data-id="${s.ID}">Cash</button>
+            <button class="btn btn-sm btn-green" data-action="payCheck" data-id="${s.ID}">Check</button>
+            <button class="btn btn-sm btn-green" data-action="payMO" data-id="${s.ID}">Money order</button>
+            <button class="btn btn-sm btn-red" data-action="payUnpaid" data-id="${s.ID}">Not paid</button>
+            <button class="btn btn-sm btn-outline" data-action="cancelChange">Cancel</button>
+          </div>`;
+        if (s.Payment === 'unpaid') {
+          payHtml += `<div class="pay-input-row">
+            <input type="text" placeholder="Name of person who received order" value="${escapeAttr(s.ReceivedBy || '')}" oninput="setReceivedByLive('${s.ID}', this.value)">
+            <div id="hint-${s.ID}" class="${s.ReceivedBy ? 'ok-text' : 'warn-text'}">${s.ReceivedBy ? 'Received by: ' + escapeHtml(s.ReceivedBy) : 'Required — enter who received the order'}</div>
+          </div>`;
+        }
+      } else if (!s.Payment) {
         if (pendingPayId === s.ID) {
           payHtml = `<hr class="divider">
             <div class="pay-label">Enter ${escapeHtml(pendingPayMethod)} number</div>
@@ -1032,6 +1062,7 @@ document.getElementById('stops-container').addEventListener('click', (e) => {
   else if (action === 'payUnpaid') markUnpaid(id);
   else if (action === 'confirmPay') confirmPayNumber(id);
   else if (action === 'cancelPay') cancelPayNumber();
+  else if (action === 'cancelChange') { pendingChangeId = null; renderStops(); }
   else if (action === 'resetPay') resetPayment(id);
 });
 
