@@ -525,6 +525,7 @@
       <div class="filter-chip" data-filter="paid">Paid</div>
       <div class="filter-chip" data-filter="unpaid">Unpaid</div>
       <div class="filter-chip" data-filter="missing">Missing</div>
+      <div class="filter-chip" data-filter="completed">Completed</div>
     </div>
 
     <div id="stops-container">
@@ -822,6 +823,10 @@ function markPending(id) {
   pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
   updateField(id, { Status: 'pending', Reason: '', Payment: '', PayMethod: '', ReceivedBy: '', ResolvedTime: '', PayTime: '' });
 }
+function markComplete(id) {
+  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
+  updateField(id, { Status: 'completed' });
+}
 function setReason(id, val) { updateField(id, { Reason: val }); }
 function markPaid(id, method) {
   pendingChangeId = null;
@@ -933,10 +938,11 @@ function renderReceivedHint(id, val) {
 }
 
 function applyFilter(list) {
-  if (currentFilter === 'all') return list;
+  if (currentFilter === 'all') return list.filter(s => s.Status !== 'completed');
   if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid');
   if (currentFilter === 'paid') return list.filter(s => s.Payment === 'paid');
   if (currentFilter === 'missing') return list.filter(s => isMissing(s));
+  if (currentFilter === 'completed') return list.filter(s => s.Status === 'completed');
   return list.filter(s => s.Status === currentFilter);
 }
 
@@ -949,12 +955,14 @@ function renderStops() {
 }
 
 function _renderStopsImpl() {
-  const total = allStops.length;
+  // Active stops = pending + not-delivered (things that still need action)
+  const activeStops = allStops.filter(s => s.Status === 'pending' || s.Status === 'not-delivered');
   const delivered = allStops.filter(s => s.Status === 'delivered').length;
+  const completed = allStops.filter(s => s.Status === 'completed').length;
   const paid = allStops.filter(s => s.Payment === 'paid').length;
   const unpaid = allStops.filter(s => s.Payment === 'unpaid').length;
   const missing = allStops.filter(s => isMissing(s)).length;
-  document.getElementById('m-total').textContent = total;
+  document.getElementById('m-total').textContent = activeStops.length;
   document.getElementById('m-delivered').textContent = delivered;
   document.getElementById('m-paid').textContent = paid;
   document.getElementById('m-unpaid').textContent = unpaid;
@@ -1035,6 +1043,7 @@ function _renderStopsImpl() {
     } else if (s.Status === 'delivered') {
       actionHtml = `<div class="action-row">
         <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Undo — back to pending</button>
+        <button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button>
         <button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button>
       </div>`;
     }
@@ -1153,6 +1162,7 @@ document.getElementById('stops-container').addEventListener('click', (e) => {
   if (action === 'delivered') markDelivered(id);
   else if (action === 'failed') markFailed(id);
   else if (action === 'pending') markPending(id);
+  else if (action === 'complete') markComplete(id);
   else if (action === 'delete') deleteStop(id);
   else if (action === 'payCash') markPaid(id, 'cash');
   else if (action === 'payCheck') markPaid(id, 'check');
