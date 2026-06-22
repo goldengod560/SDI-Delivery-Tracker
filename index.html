@@ -818,6 +818,10 @@ async function updateField(id, fields) {
 
 function markDelivered(id) { updateField(id, { Status: 'delivered', Reason: '' }); }
 function markFailed(id) { updateField(id, { Status: 'not-delivered' }); }
+function markPending(id) {
+  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
+  updateField(id, { Status: 'pending', Reason: '', Payment: '', PayMethod: '', ReceivedBy: '', ResolvedTime: '', PayTime: '' });
+}
 function setReason(id, val) { updateField(id, { Reason: val }); }
 function markPaid(id, method) {
   pendingChangeId = null;
@@ -1030,6 +1034,7 @@ function _renderStopsImpl() {
       </div>`;
     } else if (s.Status === 'delivered') {
       actionHtml = `<div class="action-row">
+        <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Undo — back to pending</button>
         <button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button>
       </div>`;
     }
@@ -1147,6 +1152,7 @@ document.getElementById('stops-container').addEventListener('click', (e) => {
   const id = btn.dataset.id;
   if (action === 'delivered') markDelivered(id);
   else if (action === 'failed') markFailed(id);
+  else if (action === 'pending') markPending(id);
   else if (action === 'delete') deleteStop(id);
   else if (action === 'payCash') markPaid(id, 'cash');
   else if (action === 'payCheck') markPaid(id, 'check');
