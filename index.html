@@ -134,7 +134,12 @@
     border-radius: var(--radius);
     padding: 8px 4px;
     text-align: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
   }
+  .metric:active { transform: scale(0.96); }
   .metric.highlight-red {
     background: var(--red-bg);
     border: 1.5px solid var(--red);
@@ -143,8 +148,25 @@
     background: #dbeafe;
     border: 1.5px solid var(--blue);
   }
+  .metric.active-metric {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
   .metric-val { font-size: 18px; font-weight: 700; line-height: 1.1; }
   .metric-lbl { font-size: 10px; color: var(--text-soft); margin-top: 2px; font-weight: 500; }
+
+  .global-banner {
+    display: none;
+    background: var(--text);
+    color: var(--surface);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 99px;
+    text-align: center;
+    margin: 0 16px 12px;
+  }
+  .global-banner.show { display: block; }
 
   .tabs {
     display: flex;
@@ -468,11 +490,11 @@
   </div>
 
   <div class="summary-bar">
-    <div class="metric" id="metric-total"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Stops</div></div>
-    <div class="metric" id="metric-delivered"><div class="metric-val" id="m-delivered" style="color:var(--green)">0</div><div class="metric-lbl">Delivered</div></div>
-    <div class="metric" id="metric-failed"><div class="metric-val" id="m-failed" style="color:var(--red)">0</div><div class="metric-lbl">Missed</div></div>
-    <div class="metric highlight-red" id="metric-unpaid"><div class="metric-val" id="m-unpaid" style="color:var(--red)">0</div><div class="metric-lbl">Unpaid</div></div>
-    <div class="metric highlight-blue" id="metric-missing"><div class="metric-val" id="m-missing" style="color:var(--purple)">0</div><div class="metric-lbl">Missing</div></div>
+    <div class="metric" id="metric-total" onclick="showGlobal('all')"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Stops</div></div>
+    <div class="metric" id="metric-delivered" onclick="showGlobal('delivered')"><div class="metric-val" id="m-delivered" style="color:var(--green)">0</div><div class="metric-lbl">Delivered</div></div>
+    <div class="metric" id="metric-failed" onclick="showGlobal('not-delivered')"><div class="metric-val" id="m-failed" style="color:var(--red)">0</div><div class="metric-lbl">Missed</div></div>
+    <div class="metric highlight-red" id="metric-unpaid" onclick="showGlobal('unpaid')"><div class="metric-val" id="m-unpaid" style="color:var(--red)">0</div><div class="metric-lbl">Unpaid</div></div>
+    <div class="metric highlight-blue" id="metric-missing" onclick="showGlobal('missing')"><div class="metric-val" id="m-missing" style="color:var(--purple)">0</div><div class="metric-lbl">Missing</div></div>
   </div>
 
   <div class="tabs">
@@ -484,6 +506,7 @@
 <main>
 
   <div class="panel active" id="panel-route">
+    <div class="global-banner" id="global-banner">🌍 Showing all dates — click a date or filter to narrow</div>
     <div class="date-nav">
       <button onclick="changeDate(-1)" aria-label="Previous day">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -600,6 +623,7 @@ let pendingPayId = null;
 let pendingPayMethod = '';
 let pendingChangeId = null;
 let receivedByTimers = {};
+let globalMode = false;
 const ACTION_COOLDOWN = 8000;
 
 function fmtDate(offset) {
@@ -623,6 +647,7 @@ function dateLabel(offset) {
 function changeDate(delta) {
   dateOffset += delta;
   document.getElementById('date-label').textContent = dateLabel(dateOffset);
+  if (globalMode) { globalMode = false; }
   loadStops();
 }
 
@@ -639,7 +664,22 @@ function switchTab(tab) {
 function setFilter(f) {
   currentFilter = f;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+  if (globalMode && f !== 'all') { globalMode = false; }
   renderStops();
+}
+
+function showGlobal(filter) {
+  globalMode = true;
+  currentFilter = filter;
+  // Highlight active metric
+  document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
+  const map = { 'all': 'metric-total', 'delivered': 'metric-delivered', 'not-delivered': 'metric-failed', 'unpaid': 'metric-unpaid', 'missing': 'metric-missing' };
+  const id = map[filter];
+  if (id) document.getElementById(id).classList.add('active-metric');
+  // Sync filter chips
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
+  renderStops();
+  showToast('Showing all dates');
 }
 
 function showToast(msg) {
@@ -881,13 +921,20 @@ function renderStops() {
   document.getElementById('metric-unpaid').classList.toggle('highlight-red', unpaid > 0);
   document.getElementById('metric-missing').classList.toggle('highlight-blue', missing > 0);
 
+  // global banner
+  document.getElementById('global-banner').classList.toggle('show', globalMode);
+  if (!globalMode) {
+    document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
+  }
+
   const copySection = document.getElementById('copy-route-section');
   if (copySection) copySection.style.display = stops.length > 0 ? 'block' : 'none';
 
+  const baseList = globalMode ? allStops : stops;
   const container = document.getElementById('stops-container');
-  const filtered = applyFilter(stops);
+  const filtered = applyFilter(baseList);
 
-  if (stops.length === 0) {
+  if (baseList.length === 0) {
     container.innerHTML = `<div class="empty-state">
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg>
       <p>No stops for this day yet.<br>Add one from the "Add stop" tab.</p>
@@ -900,14 +947,14 @@ function renderStops() {
   }
 
   container.innerHTML = filtered.map((s) => {
-    const idx = stops.indexOf(s) + 1;
+    const idx = baseList.indexOf(s) + 1;
     const stopMissing = isMissing(s);
     const badgeCls = s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
     const badgeTxt = s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
     const cardClass = s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
 
     const metaBits = [];
-    if (currentFilter === 'missing' || currentFilter === 'unpaid') metaBits.push(parseSheetDate(s.Date));
+    if (globalMode || currentFilter === 'missing' || currentFilter === 'unpaid') metaBits.push(parseSheetDate(s.Date));
     if (s.OrderNumber) metaBits.push(s.OrderNumber);
     if (s.Address) metaBits.push('Driver: ' + s.Address);
     metaBits.push('Added ' + parseSheetTime(s.AddedTime || ''));
