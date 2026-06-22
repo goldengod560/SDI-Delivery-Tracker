@@ -624,7 +624,17 @@ let pendingPayMethod = '';
 let pendingChangeId = null;
 let receivedByTimers = {};
 let globalMode = false;
+let renderRaf = null;
+let lastStopsHash = '';
+let lastAllStopsHash = '';
 const ACTION_COOLDOWN = 8000;
+
+function hashStops(arr) {
+  // Fast hash: just count + first 3 IDs + last ID. Good enough for change detection.
+  if (!arr.length) return '0';
+  const ids = arr.map(s => s.ID || '').join(',');
+  return arr.length + ':' + ids.slice(0, 200) + ':' + ids.slice(-100);
+}
 
 function fmtDate(offset) {
   const d = new Date();
@@ -730,13 +740,28 @@ function isMissing(stop) {
 async function loadStops(silent) {
   if (silent && (Date.now() - lastActionTime) < ACTION_COOLDOWN) return;
   if (isInteracting) return;
+  if (document.hidden) return;
+  if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) return;
+
   const refreshBtn = document.getElementById('refresh-btn');
   if (!silent) refreshBtn.classList.add('spinning');
   try {
     const dateStr = fmtDate(dateOffset);
     const data = await apiGet({ action: 'list' });
-    allStops = data.stops || [];
-    stops = allStops.filter(s => parseSheetDate(s.Date) === dateStr);
+    const newAllStops = data.stops || [];
+    const newStops = newAllStops.filter(s => parseSheetDate(s.Date) === dateStr);
+
+    const newAllHash = hashStops(newAllStops);
+    const newStopsHash = hashStops(newStops);
+    if (newAllHash === lastAllStopsHash && newStopsHash === lastStopsHash) {
+      if (!silent) refreshBtn.classList.remove('spinning');
+      return;
+    }
+    lastAllStopsHash = newAllHash;
+    lastStopsHash = newStopsHash;
+
+    allStops = newAllStops;
+    stops = newStops;
     renderStops();
     document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
   } catch (err) {
@@ -883,12 +908,12 @@ function showConfirm(title, body, onConfirm) {
 
 function setReceivedByLive(id, val) {
   lastActionTime = Date.now();
-  const s = stops.find(x => x.ID === id);
+  const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id);
   if (s) s.ReceivedBy = val;
   clearTimeout(receivedByTimers[id]);
   receivedByTimers[id] = setTimeout(() => {
     apiPost({ action: 'update', id, fields: { ReceivedBy: val } }).catch(() => {});
-  }, 600);
+  }, 1200); // longer debounce = fewer network calls
   renderReceivedHint(id, val);
 }
 function renderReceivedHint(id, val) {
@@ -907,6 +932,14 @@ function applyFilter(list) {
 }
 
 function renderStops() {
+  if (renderRaf) cancelAnimationFrame(renderRaf);
+  renderRaf = requestAnimationFrame(() => {
+    renderRaf = null;
+    _renderStopsImpl();
+  });
+}
+
+function _renderStopsImpl() {
   const total = allStops.length;
   const delivered = allStops.filter(s => s.Status === 'delivered').length;
   const paid = allStops.filter(s => s.Payment === 'paid').length;
@@ -1152,7 +1185,18 @@ async function sendWeeklyReport() {
 document.getElementById('date-label').textContent = dateLabel(0);
 document.getElementById('inp-date').value = fmtDate(0);
 loadStops();
-pollTimer = setInterval(() => loadStops(true), 15000);
+pollTimer = setInterval(() => loadStops(true), 60000); // was 15000
+
+// Pause polling when tab is hidden, resume when visible
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  } else if (!pollTimer) {
+    pollTimer = setInterval(() => loadStops(true), 60000);
+    loadStops(true); // catch up immediately
+  }
+});
 </script>
 
 </body>
