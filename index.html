@@ -838,6 +838,10 @@ function confirmPayNumber(id) {
 }
 function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null; renderStops(); }
 function markUnpaid(id) { pendingChangeId = null; updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
+function undoPay(id) {
+  pendingChangeId = null;
+  updateField(id, { Payment: '', PayMethod: '', ReceivedBy: '', PayTime: '' });
+}
 function resetPayment(id) {
   pendingPayId = null; pendingPayMethod = ''; pendingChangeId = id;
   renderStops();
@@ -1072,13 +1076,19 @@ function _renderStopsImpl() {
         payHtml = `<hr class="divider">
           <div class="pay-status-row">
             <span class="badge badge-delivered">Paid — ${escapeHtml(s.PayMethod || '')}${s.PayTime ? ' · ' + parseSheetTime(s.PayTime) : ''}</span>
-            <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
+            <div>
+              <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
+              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo</button>
+            </div>
           </div>`;
       } else if (s.Payment === 'unpaid') {
         payHtml = `<hr class="divider">
           <div class="pay-status-row">
             <span class="badge badge-failed">Not paid${s.PayTime ? ' · ' + parseSheetTime(s.PayTime) : ''}</span>
-            <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
+            <div>
+              <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
+              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo</button>
+            </div>
           </div>
           <div class="pay-input-row">
             <input type="text" placeholder="Name of person who received order" value="${escapeAttr(s.ReceivedBy || '')}" oninput="setReceivedByLive('${s.ID}', this.value)">
@@ -1144,6 +1154,7 @@ document.getElementById('stops-container').addEventListener('click', (e) => {
   else if (action === 'confirmPay') confirmPayNumber(id);
   else if (action === 'cancelPay') cancelPayNumber();
   else if (action === 'cancelChange') { pendingChangeId = null; renderStops(); }
+  else if (action === 'undoPay') undoPay(id);
   else if (action === 'resetPay') resetPayment(id);
 });
 
