@@ -831,7 +831,6 @@ function showConfirm(title, body, onConfirm) {
   noBtn.onclick = () => modal.classList.remove('show');
 }
 
-let receivedByTimers = {};
 function setReceivedByLive(id, val) {
   lastActionTime = Date.now();
   const s = stops.find(x => x.ID === id);
