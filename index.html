@@ -120,14 +120,12 @@
 
   .summary-bar {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 8px;
     padding-bottom: 12px;
   }
-  @media (max-width: 380px) {
+  @media (max-width: 400px) {
     .summary-bar { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .summary-bar .metric:nth-child(4),
-    .summary-bar .metric:nth-child(5) { grid-column: span 1; }
   }
   .metric {
     background: var(--bg);
@@ -493,6 +491,7 @@
     <div class="metric" id="metric-total" onclick="showGlobal('all')"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Stops</div></div>
     <div class="metric" id="metric-delivered" onclick="showGlobal('delivered')"><div class="metric-val" id="m-delivered" style="color:var(--green)">0</div><div class="metric-lbl">Delivered</div></div>
     <div class="metric" id="metric-paid" onclick="showGlobal('paid')"><div class="metric-val" id="m-paid" style="color:var(--green)">0</div><div class="metric-lbl">Paid</div></div>
+    <div class="metric" id="metric-completed" onclick="showGlobal('completed')"><div class="metric-val" id="m-completed" style="color:var(--green)">0</div><div class="metric-lbl">Completed</div></div>
     <div class="metric highlight-red" id="metric-unpaid" onclick="showGlobal('unpaid')"><div class="metric-val" id="m-unpaid" style="color:var(--red)">0</div><div class="metric-lbl">Unpaid</div></div>
     <div class="metric highlight-blue" id="metric-missing" onclick="showGlobal('missing')"><div class="metric-val" id="m-missing" style="color:var(--purple)">0</div><div class="metric-lbl">Missing</div></div>
   </div>
@@ -685,7 +684,7 @@ function showGlobal(filter) {
   currentFilter = filter;
   // Highlight active metric
   document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
-  const map = { 'all': 'metric-total', 'delivered': 'metric-delivered', 'paid': 'metric-paid', 'unpaid': 'metric-unpaid', 'missing': 'metric-missing' };
+  const map = { 'all': 'metric-total', 'delivered': 'metric-delivered', 'paid': 'metric-paid', 'completed': 'metric-completed', 'unpaid': 'metric-unpaid', 'missing': 'metric-missing' };
   const id = map[filter];
   if (id) document.getElementById(id).classList.add('active-metric');
   // Sync filter chips
@@ -938,7 +937,7 @@ function renderReceivedHint(id, val) {
 }
 
 function applyFilter(list) {
-  if (currentFilter === 'all') return list.filter(s => s.Status !== 'completed');
+  if (currentFilter === 'all') return list; // includes completed so they show on daily view
   if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid');
   if (currentFilter === 'paid') return list.filter(s => s.Payment === 'paid');
   if (currentFilter === 'missing') return list.filter(s => isMissing(s));
@@ -965,6 +964,7 @@ function _renderStopsImpl() {
   document.getElementById('m-total').textContent = activeStops.length;
   document.getElementById('m-delivered').textContent = delivered;
   document.getElementById('m-paid').textContent = paid;
+  document.getElementById('m-completed').textContent = completed;
   document.getElementById('m-unpaid').textContent = unpaid;
   document.getElementById('m-missing').textContent = missing;
 
