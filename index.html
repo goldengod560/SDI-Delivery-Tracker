@@ -837,14 +837,14 @@ function markPaid(id, method) {
     setTimeout(() => { const inp = document.getElementById('paynum-' + id); if (inp) inp.focus(); }, 50);
     return;
   }
-  updateField(id, { Payment: 'paid', PayMethod: method, ReceivedBy: '', Status: 'completed' });
+  updateField(id, { Payment: 'paid', PayMethod: method, ReceivedBy: '', Status: 'delivered' });
 }
 function confirmPayNumber(id) {
   const inp = document.getElementById('paynum-' + id);
   const num = inp ? inp.value.trim() : '';
   const label = pendingPayMethod + (num ? ' #' + num : '');
   pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
-  updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '', Status: 'completed' });
+  updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '', Status: 'delivered' });
 }
 function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null; renderStops(); }
 function markUnpaid(id) { pendingChangeId = null; updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
