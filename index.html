@@ -837,14 +837,14 @@ function markPaid(id, method) {
     setTimeout(() => { const inp = document.getElementById('paynum-' + id); if (inp) inp.focus(); }, 50);
     return;
   }
-  updateField(id, { Payment: 'paid', PayMethod: method, ReceivedBy: '' });
+  updateField(id, { Payment: 'paid', PayMethod: method, ReceivedBy: '', Status: 'completed' });
 }
 function confirmPayNumber(id) {
   const inp = document.getElementById('paynum-' + id);
   const num = inp ? inp.value.trim() : '';
   const label = pendingPayMethod + (num ? ' #' + num : '');
   pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
-  updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '' });
+  updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '', Status: 'completed' });
 }
 function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null; renderStops(); }
 function markUnpaid(id) { pendingChangeId = null; updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
@@ -1000,14 +1000,16 @@ function _renderStopsImpl() {
   container.innerHTML = filtered.map((s) => {
     const idx = baseList.indexOf(s) + 1;
     const stopMissing = isMissing(s);
-    const badgeCls = s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
-    const badgeTxt = s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
-    const cardClass = s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
+    const badgeCls = s.Status === 'completed' ? 'badge-delivered' : s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
+    const badgeTxt = s.Status === 'completed' ? 'Completed' : s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
+    const cardClass = s.Status === 'completed' ? 'delivered' : s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
 
     const metaBits = [];
-    if (globalMode || currentFilter === 'missing' || currentFilter === 'unpaid') metaBits.push(parseSheetDate(s.Date));
+    if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter)) metaBits.push(parseSheetDate(s.Date));
     if (s.OrderNumber) metaBits.push(s.OrderNumber);
     if (s.Address) metaBits.push('Driver: ' + s.Address);
+    if (currentFilter === 'paid' && s.PayMethod) metaBits.push('Payment: ' + s.PayMethod);
+    if (currentFilter === 'unpaid' && s.Reason) metaBits.push('Reason: ' + s.Reason);
     metaBits.push('Added ' + parseSheetTime(s.AddedTime || ''));
 
     const notesHtml = s.Notes ? `<div class="stop-notes">${escapeHtml(s.Notes)}</div>` : '';
@@ -1093,7 +1095,8 @@ function _renderStopsImpl() {
             <span class="badge badge-delivered">Paid — ${escapeHtml(s.PayMethod || '')}${s.PayTime ? ' · ' + parseSheetTime(s.PayTime) : ''}</span>
             <div>
               <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
-              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo</button>
+              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo payment</button>
+              <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button>
             </div>
           </div>`;
       } else if (s.Payment === 'unpaid') {
@@ -1102,7 +1105,8 @@ function _renderStopsImpl() {
             <span class="badge badge-failed">Not paid${s.PayTime ? ' · ' + parseSheetTime(s.PayTime) : ''}</span>
             <div>
               <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
-              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo</button>
+              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo payment</button>
+              <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button>
             </div>
           </div>
           <div class="pay-input-row">
