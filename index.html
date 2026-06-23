@@ -1035,14 +1035,15 @@ function _renderStopsImpl() {
     const idx = baseList.indexOf(s) + 1;
     const stopMissing = isMissing(s);
     const badgeCls = s.Status === 'completed' ? 'badge-delivered' : s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
-    const badgeTxt = s.Status === 'completed' ? 'Completed' : s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
+    const badgeTxt = s.Status === 'completed' ? 'Completed' + (s.Payment === 'paid' ? ' · Paid' : s.Payment === 'unpaid' ? ' · Not paid' : '') : s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
     const cardClass = s.Status === 'completed' ? 'delivered' : s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
 
     const metaBits = [];
     if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter)) metaBits.push(parseSheetDate(s.Date));
     if (s.OrderNumber) metaBits.push(s.OrderNumber);
     if (s.Address) metaBits.push('Driver: ' + s.Address);
-    if (currentFilter === 'paid' && s.PayMethod) metaBits.push('Payment: ' + s.PayMethod);
+    if ((currentFilter === 'paid' || currentFilter === 'completed') && s.PayMethod) metaBits.push('Payment: ' + s.PayMethod);
+    if (currentFilter === 'completed' && s.Payment === 'unpaid') metaBits.push('Not paid');
     if (currentFilter === 'unpaid' && s.Reason) metaBits.push('Reason: ' + s.Reason);
     metaBits.push('Added ' + parseSheetTime(s.AddedTime || ''));
 
