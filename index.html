@@ -971,7 +971,7 @@ function renderReceivedHint(id, val) {
 }
 
 function applyFilter(list) {
-  if (currentFilter === 'all') return list; // includes completed so they show on daily view
+  if (currentFilter === 'all') return list.filter(s => s.Status !== 'completed');
   if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid');
   if (currentFilter === 'paid') return list.filter(s => s.Payment === 'paid');
   if (currentFilter === 'missing') return list.filter(s => isMissing(s));
