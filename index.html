@@ -760,6 +760,9 @@ function parseSheetDate(val) {
 }
 
 function isMissing(stop) {
+  // Backend may explicitly mark as 'missing'
+  if (stop.Status === 'missing') return true;
+  // Legacy: 48+ hour pending stops
   if (stop.Status !== 'pending') return false;
   const dateStr = parseSheetDate(stop.Date);
   const stopDate = new Date(dateStr + 'T12:00:00');
