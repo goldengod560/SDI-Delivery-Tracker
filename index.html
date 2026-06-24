@@ -707,6 +707,8 @@ function changeDate(delta) {
   dateOffset += delta;
   document.getElementById('date-label').textContent = dateLabel(dateOffset);
   if (globalMode) { globalMode = false; }
+  // Immediately clear old data and show loading
+  document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
   loadStops();
 }
 
@@ -723,6 +725,7 @@ function jumpToDate(dateStr) {
   dateOffset = diff;
   document.getElementById('date-label').textContent = dateLabel(dateOffset);
   if (globalMode) { globalMode = false; }
+  document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
   loadStops();
 }
 
@@ -780,12 +783,23 @@ async function apiPost(body) {
 
 function parseSheetDate(val) {
   if (!val) return '';
-  const str = String(val);
+  const str = String(val).trim();
+  // Plain text YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  // Extract YYYY-MM-DD from ISO date strings like "2026-06-22T04:00:00.000Z"
-  // Avoid timezone conversion bugs that shift dates by one day
+  // ISO date string: extract YYYY-MM-DD from the beginning
   const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  // Google Sheets serial date (number of days since 1899-12-30)
+  const serial = parseFloat(str);
+  if (!isNaN(serial) && serial > 30000 && serial < 100000) {
+    const epoch = new Date(1899, 11, 30); // Dec 30, 1899
+    const d = new Date(epoch.getTime() + serial * 24 * 60 * 60 * 1000);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  // Try parsing as Date
   const d = new Date(str);
   if (!isNaN(d.getTime())) {
     const y = d.getFullYear();
@@ -819,6 +833,7 @@ async function loadStops(silent) {
   if (!silent) refreshBtn.classList.add('spinning');
   try {
     const dateStr = fmtDate(dateOffset);
+    // Fetch all stops for metrics, but also pass date for potential future optimization
     const data = await apiGet({ action: 'list' });
     const newAllStops = data.stops || [];
     const newStops = newAllStops.filter(s => parseSheetDate(s.Date) === dateStr);
