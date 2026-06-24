@@ -4,509 +4,138 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>SDI Delivery Tracker</title>
-<!-- Clean SVG favicon — works everywhere, no broken base64 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231c1f1b'/%3E%3Ctext x='50' y='65' font-family='system-ui' font-size='55' font-weight='700' text-anchor='middle' fill='%23f4f5f3'%3ES%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%231c1f1b'/%3E%3Ctext x='90' y='118' font-family='system-ui' font-size='100' font-weight='700' text-anchor='middle' fill='%23f4f5f3'%3ES%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SDI Tracker">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f4f5f3;
-    --surface: #ffffff;
-    --border: #dcdfd9;
-    --text: #1c1f1b;
-    --text-soft: #6b6f66;
-    --text-faint: #9a9d94;
-    --green: #1d9e75;
-    --green-bg: #e1f5ee;
-    --green-text: #085041;
-    --red: #d23b3b;
-    --red-bg: #fce8e8;
-    --red-text: #7a1f1f;
-    --amber: #c9821a;
-    --amber-bg: #fbeed9;
-    --amber-text: #6b4408;
-    --purple: #7c3aed;
-    --purple-bg: #f0e7fe;
-    --purple-text: #3b1a7a;
-    --blue: #2563eb;
-    --radius: 10px;
-    --radius-lg: 14px;
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-  }
-  body {
-    padding: 0 0 100px;
-    min-height: 100vh;
-  }
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 16px 0;
-    position: sticky;
-    top: 0;
-    z-index: 20;
-  }
-  .header-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 12px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .brand-mark {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: var(--text);
-    color: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-  .brand-text h1 {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-    line-height: 1.2;
-  }
-  .brand-text p {
-    font-size: 12px;
-    color: var(--text-soft);
-    margin: 0;
-  }
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .refresh-btn, .report-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--text-soft);
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
-    position: relative;
-  }
-  .refresh-btn:active, .report-btn:active { transform: scale(0.94); }
-  .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+:root {
+  --bg: #f4f5f3; --surface: #ffffff; --border: #dcdfd9;
+  --text: #1c1f1b; --text-soft: #6b6f66; --text-faint: #9a9d94;
+  --green: #1d9e75; --green-bg: #e1f5ee; --green-text: #085041;
+  --red: #d23b3b; --red-bg: #fce8e8; --red-text: #7a1f1f;
+  --amber: #c9821a; --amber-bg: #fbeed9; --amber-text: #6b4408;
+  --purple: #7c3aed; --purple-bg: #f0e7fe; --purple-text: #3b1a7a;
+  --blue: #2563eb; --radius: 10px; --radius-lg: 14px;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; -webkit-tap-highlight-color:transparent; }
+body { padding:0 0 100px; min-height:100vh; }
+header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 16px 0; position:sticky; top:0; z-index:20; }
+.header-top { display:flex; align-items:center; justify-content:space-between; padding-bottom:12px; }
+.brand { display:flex; align-items:center; gap:10px; }
+.brand-mark { width:32px; height:32px; border-radius:8px; background:var(--text); color:var(--bg); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+.brand-text h1 { font-size:16px; font-weight:600; margin:0; line-height:1.2; }
+.brand-text p { font-size:12px; color:var(--text-soft); margin:0; }
+.header-actions { display:flex; align-items:center; gap:8px; }
+.header-actions > * { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-soft); touch-action:manipulation; -webkit-user-select:none; user-select:none; position:relative; }
+.header-actions > *:active { transform:scale(0.94); }
+.refresh-btn.spinning svg { animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.report-dropdown { position:absolute; top:42px; right:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:160px; display:none; z-index:30; overflow:hidden; }
+.report-dropdown.show { display:block; }
+.report-dropdown-item { padding:10px 14px; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; border-bottom:1px solid var(--border); white-space:nowrap; }
+.report-dropdown-item:last-child { border-bottom:none; }
+.report-dropdown-item:active { background:var(--bg); }
 
-  .report-dropdown {
-    position: absolute;
-    top: 42px;
-    right: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    min-width: 160px;
-    display: none;
-    z-index: 30;
-    overflow: hidden;
-  }
-  .report-dropdown.show { display: block; }
-  .report-dropdown-item {
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
-    cursor: pointer;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  .report-dropdown-item:last-child { border-bottom: none; }
-  .report-dropdown-item:active { background: var(--bg); }
+.summary-bar { display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; padding-bottom:12px; }
+@media (max-width:400px) { .summary-bar { grid-template-columns:repeat(3, 1fr); gap:6px; } }
+.metric { background:var(--bg); border-radius:var(--radius); padding:8px 4px; text-align:center; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+.metric:active { transform:scale(0.96); }
+.metric.highlight-red { background:var(--red-bg); border:1.5px solid var(--red); }
+.metric.highlight-blue { background:#dbeafe; border:1.5px solid var(--blue); }
+.metric.active-metric { outline:2px solid var(--text); outline-offset:2px; }
+.metric-val { font-size:18px; font-weight:700; line-height:1.1; }
+.metric-lbl { font-size:10px; color:var(--text-soft); margin-top:2px; font-weight:500; }
 
-  .summary-bar {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    padding-bottom: 12px;
-  }
-  @media (max-width: 400px) {
-    .summary-bar { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  }
-  .metric {
-    background: var(--bg);
-    border-radius: var(--radius);
-    padding: 8px 4px;
-    text-align: center;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .metric:active { transform: scale(0.96); }
-  .metric.highlight-red {
-    background: var(--red-bg);
-    border: 1.5px solid var(--red);
-  }
-  .metric.highlight-blue {
-    background: #dbeafe;
-    border: 1.5px solid var(--blue);
-  }
-  .metric.active-metric {
-    outline: 2px solid var(--text);
-    outline-offset: 2px;
-  }
-  .metric-val { font-size: 18px; font-weight: 700; line-height: 1.1; }
-  .metric-lbl { font-size: 10px; color: var(--text-soft); margin-top: 2px; font-weight: 500; }
+.tabs { display:flex; gap:4px; }
+.tab { flex:1; text-align:center; padding:10px 0 12px; font-size:13px; font-weight:600; color:var(--text-soft); border-bottom:2px solid transparent; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+.tab.active { color:var(--text); border-bottom-color:var(--text); }
 
-  .global-banner {
-    display: none;
-    background: var(--text);
-    color: var(--surface);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 99px;
-    text-align: center;
-    margin: 0 16px 12px;
-  }
-  .global-banner.show { display: block; }
+main { padding:16px; max-width:560px; margin:0 auto; }
+.panel { display:none; }
+.panel.active { display:block; }
 
-  .tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: none;
-  }
-  .tab {
-    flex: 1;
-    text-align: center;
-    padding: 10px 0 12px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-soft);
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .tab.active {
-    color: var(--text);
-    border-bottom-color: var(--text);
-  }
+.global-banner { display:none; background:var(--text); color:var(--surface); font-size:12px; font-weight:600; padding:6px 14px; border-radius:99px; text-align:center; margin:0 0 12px; }
+.global-banner.show { display:block; }
 
-  main {
-    padding: 16px;
-    max-width: 560px;
-    margin: 0 auto;
-  }
+.date-nav { display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; margin-bottom:16px; }
+.date-nav button { background:none; border:none; color:var(--text-soft); padding:6px 8px; cursor:pointer; display:flex; touch-action:manipulation; border-radius:6px; }
+.date-nav button:active { background:var(--bg); }
+.date-nav .date-label { font-size:13.5px; font-weight:600; cursor:pointer; padding:4px 8px; border-radius:6px; -webkit-user-select:none; user-select:none; }
+.date-nav .date-label:active { background:var(--bg); }
+.date-picker-input { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
 
-  .panel { display: none; }
-  .panel.active { display: block; }
+.filter-row { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.filter-row::-webkit-scrollbar { display:none; }
+.filter-chip { flex-shrink:0; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:99px; border:1px solid var(--border); background:var(--surface); color:var(--text-soft); cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+.filter-chip:active { transform:scale(0.96); }
+.filter-chip.active { background:var(--text); border-color:var(--text); color:var(--surface); }
 
-  .form-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-  .field { margin-bottom: 12px; }
-  .field:last-of-type { margin-bottom: 0; }
-  .field label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-soft);
-    margin-bottom: 5px;
-  }
-  .field .optional { font-weight: 400; color: var(--text-faint); }
-  .field input, .field textarea, .field select {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 11px 12px;
-    font-size: 15px;
-    font-family: inherit;
-    background: var(--bg);
-    color: var(--text);
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  .field input:focus, .field textarea:focus, .field select:focus {
-    outline: none;
-    border-color: var(--text);
-    background: var(--surface);
-  }
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.loading-row { text-align:center; padding:30px; color:var(--text-faint); font-size:13px; }
+.empty-state { text-align:center; padding:50px 20px; color:var(--text-soft); }
+.empty-state p { font-size:14px; margin:0; }
 
-  .btn {
-    border: none;
-    border-radius: var(--radius);
-    font-size: 14px;
-    font-weight: 600;
-    padding: 12px 16px;
-    cursor: pointer;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  .btn:active:not(:disabled) { transform: scale(0.97); }
-  .btn-primary {
-    background: var(--text);
-    color: var(--surface);
-    width: 100%;
-    padding: 13px 16px;
-    font-size: 15px;
-    margin-top: 4px;
-  }
-  .btn-outline {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  .btn-green { color: var(--green-text); border-color: var(--green); background: var(--green-bg); }
-  .btn-red { color: var(--red-text); border-color: var(--red); background: var(--red-bg); }
-  .btn-ghost {
-    background: none;
-    border: none;
-    color: var(--text-soft);
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 4px;
-  }
-  .btn-sm { font-size: 12.5px; padding: 10px 12px; flex: 1; }
-  @media (max-width: 380px) {
-    .btn-sm { font-size: 12px; padding: 11px 8px; }
-  }
+.form-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; margin-bottom:20px; }
+.field { margin-bottom:12px; }
+.field label { display:block; font-size:12px; font-weight:600; color:var(--text-soft); margin-bottom:5px; }
+.field .optional { font-weight:400; color:var(--text-faint); }
+.field input, .field textarea, .field select { width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:11px 12px; font-size:15px; font-family:inherit; background:var(--bg); color:var(--text); -webkit-appearance:none; appearance:none; }
+.field input:focus, .field textarea:focus, .field select:focus { outline:none; border-color:var(--text); background:var(--surface); }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.btn { border:none; border-radius:var(--radius); font-size:14px; font-weight:600; padding:12px 16px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
+.btn:disabled { opacity:0.55; cursor:not-allowed; }
+.btn:active:not(:disabled) { transform:scale(0.97); }
+.btn-primary { background:var(--text); color:var(--surface); width:100%; padding:13px 16px; font-size:15px; }
+.btn-outline { background:var(--surface); border:1px solid var(--border); color:var(--text); }
+.btn-green { color:var(--green-text); border-color:var(--green); background:var(--green-bg); }
+.btn-red { color:var(--red-text); border-color:var(--red); background:var(--red-bg); }
+.btn-ghost { background:none; border:none; color:var(--text-soft); font-size:12px; font-weight:500; padding:6px 4px; }
+.btn-sm { font-size:12.5px; padding:10px 12px; flex:1; }
+.action-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.action-row-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.divider { border:none; border-top:1px solid var(--border); margin:12px 0; }
 
-  .section-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-faint);
-    margin: 4px 0 10px;
-  }
-  .stops-list { display: flex; flex-direction: column; gap: 10px; }
-  .stop-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 14px 16px;
-    border-left: 4px solid var(--text-faint);
-    transition: transform 0.05s;
-  }
-  .stop-card.delivered { border-left-color: var(--green); }
-  .stop-card.not-delivered { border-left-color: var(--red); }
-  .stop-card.pending { border-left-color: var(--amber); }
-  .stop-card.missing { border-left-color: var(--purple); }
+.stops-list { display:flex; flex-direction:column; gap:10px; }
+.stop-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; border-left:4px solid var(--text-faint); }
+.stop-card.delivered { border-left-color:var(--green); }
+.stop-card.not-delivered { border-left-color:var(--red); }
+.stop-card.pending { border-left-color:var(--amber); }
+.stop-card.missing { border-left-color:var(--purple); }
+.stop-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.stop-num { font-size:11px; font-weight:700; color:var(--text-faint); }
+.stop-name { font-size:20px; font-weight:700; margin:1px 0 4px; }
+.stop-meta { font-size:12.5px; color:var(--text-soft); line-height:1.5; }
+.stop-notes { font-size:12.5px; color:var(--text-soft); margin-top:6px; font-style:italic; }
 
-  .stop-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .stop-num { font-size: 11px; font-weight: 700; color: var(--text-faint); }
-  .stop-name { font-size: 20px; font-weight: 700; margin: 1px 0 4px; }
-  .stop-meta { font-size: 12.5px; color: var(--text-soft); line-height: 1.5; }
-  .stop-notes { font-size: 12.5px; color: var(--text-soft); margin-top: 6px; font-style: italic; }
+.badge { font-size:11px; font-weight:700; padding:4px 9px; border-radius:99px; white-space:nowrap; flex-shrink:0; }
+.badge-pending { background:var(--amber-bg); color:var(--amber-text); }
+.badge-delivered { background:var(--green-bg); color:var(--green-text); }
+.badge-failed { background:var(--red-bg); color:var(--red-text); }
+.badge-missing { background:var(--purple-bg); color:var(--purple-text); }
 
-  .badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 9px;
-    border-radius: 99px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .badge-pending { background: var(--amber-bg); color: var(--amber-text); }
-  .badge-delivered { background: var(--green-bg); color: var(--green-text); }
-  .badge-failed { background: var(--red-bg); color: var(--red-text); }
-  .badge-missing { background: var(--purple-bg); color: var(--purple-text); }
+.pay-label { font-size:11px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:8px; }
+.pay-status-row { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.pay-input-row { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.pay-input-row input { border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); }
 
-  .action-row { display: flex; gap: 8px; margin-top: 12px; }
-  .action-row-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+select.reason-select { width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); margin-top:8px; }
+.warn-text { font-size:12px; color:var(--red); margin-top:6px; font-weight:500; }
+.ok-text { font-size:12px; color:var(--text-soft); margin-top:6px; }
 
-  select.reason-select {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
-    font-size: 14px;
-    font-family: inherit;
-    background: var(--bg);
-    color: var(--text);
-    margin-top: 8px;
-  }
-  .warn-text { font-size: 12px; color: var(--red); margin-top: 6px; font-weight: 500; }
-  .ok-text { font-size: 12px; color: var(--text-soft); margin-top: 6px; }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--text); color:var(--bg); padding:10px 18px; border-radius:99px; font-size:13px; font-weight:500; opacity:0; pointer-events:none; transition:opacity 0.2s, transform 0.2s; z-index:50; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-  .pay-label { font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
-  .pay-status-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-  .pay-input-row { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-  .pay-input-row input {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
-    font-size: 14px;
-    font-family: inherit;
-    background: var(--bg);
-    color: var(--text);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 50px 20px;
-    color: var(--text-soft);
-  }
-  .empty-state svg { color: var(--text-faint); margin-bottom: 10px; }
-  .empty-state p { font-size: 14px; margin: 0; }
-
-  .toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    background: var(--text);
-    color: var(--bg);
-    padding: 10px 18px;
-    border-radius: 99px;
-    font-size: 13px;
-    font-weight: 500;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s, transform 0.2s;
-    z-index: 50;
-    white-space: nowrap;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .date-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 8px 12px;
-    margin-bottom: 16px;
-  }
-  .date-nav button {
-    background: none;
-    border: none;
-    color: var(--text-soft);
-    padding: 6px 8px;
-    cursor: pointer;
-    display: flex;
-    touch-action: manipulation;
-    border-radius: 6px;
-  }
-  .date-nav button:active { background: var(--bg); }
-  .date-nav .date-label {
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 6px;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .date-nav .date-label:active { background: var(--bg); }
-  .date-picker-input {
-    position: absolute;
-    opacity: 0;
-    width: 1px;
-    height: 1px;
-    pointer-events: none;
-  }
-
-  .filter-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .filter-row::-webkit-scrollbar { display: none; }
-  .filter-chip {
-    flex-shrink: 0;
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 7px 13px;
-    border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-soft);
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .filter-chip:active { transform: scale(0.96); }
-  .filter-chip.active {
-    background: var(--text);
-    border-color: var(--text);
-    color: var(--surface);
-  }
-
-  .loading-row { text-align: center; padding: 30px; color: var(--text-faint); font-size: 13px; }
-
-  /* Modal / confirm dialog */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 60;
-    padding: 20px;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal-card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    width: 100%;
-    max-width: 320px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-  }
-  .modal-card h3 { margin: 0 0 8px; font-size: 16px; }
-  .modal-card p { margin: 0 0 16px; font-size: 13px; color: var(--text-soft); line-height: 1.5; }
-  .modal-actions { display: flex; gap: 8px; }
-  .modal-actions .btn { flex: 1; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:60; padding:20px; }
+.modal-overlay.show { display:flex; }
+.modal-card { background:var(--surface); border-radius:var(--radius-lg); padding:20px; width:100%; max-width:320px; box-shadow:0 20px 40px rgba(0,0,0,0.15); }
+.modal-card h3 { margin:0 0 8px; font-size:16px; }
+.modal-card p { margin:0 0 16px; font-size:13px; color:var(--text-soft); line-height:1.5; }
+.modal-actions { display:flex; gap:8px; }
+.modal-actions .btn { flex:1; }
 </style>
 </head>
 <body>
@@ -550,18 +179,13 @@
 </header>
 
 <main>
-
   <div class="panel active" id="panel-route">
-    <div class="global-banner" id="global-banner">🌍 Showing all dates — click a date or filter to narrow</div>
+    <div class="global-banner" id="global-banner">🌍 Showing all dates</div>
     <div class="date-nav">
-      <button onclick="changeDate(-1)" aria-label="Previous day">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </button>
+      <button onclick="changeDate(-1)" aria-label="Previous day"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
       <span class="date-label" id="date-label" onclick="openDatePicker()">Today</span>
       <input type="date" id="date-picker" class="date-picker-input" onchange="jumpToDate(this.value)">
-      <button onclick="changeDate(1)" aria-label="Next day">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </button>
+      <button onclick="changeDate(1)" aria-label="Next day"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
     </div>
 
     <div class="filter-row">
@@ -575,65 +199,25 @@
       <div class="filter-chip" data-filter="completed">Completed</div>
     </div>
 
-    <div id="stops-container">
-      <div class="loading-row">Loading stops...</div>
-    </div>
-
-    <div id="copy-route-section" style="display:none; margin-top:16px;">
-      <button class="btn btn-outline" style="width:100%" onclick="showCopyModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-        Copy this route to another date
-      </button>
-    </div>
-
-    <div id="copy-modal" style="display:none; margin-top:12px;">
-      <div class="form-card">
-        <div class="section-label">Copy route to...</div>
-        <div class="field">
-          <label>Target date</label>
-          <input type="date" id="copy-target-date" autocomplete="off">
-        </div>
-        <div class="action-row">
-          <button class="btn btn-sm btn-green" onclick="executeCopyRoute()">Copy stops</button>
-          <button class="btn btn-sm btn-outline" onclick="hideCopyModal()">Cancel</button>
-        </div>
-      </div>
-    </div>
+    <div id="stops-container"><div class="loading-row">Loading stops...</div></div>
   </div>
 
   <div class="panel" id="panel-add">
     <div class="form-card">
-      <div class="field">
-        <label>Schedule for date</label>
-        <input type="date" id="inp-date" autocomplete="off">
-      </div>
-      <div class="field">
-        <label>Customer or business name</label>
-        <input type="text" id="inp-name" placeholder="e.g. Ahmed Store" autocomplete="off">
-      </div>
-      <div class="field">
-        <label>Delivery person <span class="optional">(optional)</span></label>
-        <input type="text" id="inp-addr" placeholder="e.g. John" autocomplete="off">
-      </div>
+      <div class="field"><label>Schedule for date</label><input type="date" id="inp-date" autocomplete="off"></div>
+      <div class="field"><label>Customer or business name</label><input type="text" id="inp-name" placeholder="e.g. Ahmed Store" autocomplete="off"></div>
+      <div class="field"><label>Delivery person <span class="optional">(optional)</span></label><input type="text" id="inp-addr" placeholder="e.g. John" autocomplete="off"></div>
       <div class="field-row">
-        <div class="field">
-          <label>Order # <span class="optional">(optional)</span></label>
-          <input type="text" id="inp-order" placeholder="#1042" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>Notes <span class="optional">(optional)</span></label>
-          <input type="text" id="inp-notes" placeholder="Call on arrival" autocomplete="off">
-        </div>
+        <div class="field"><label>Order # <span class="optional">(optional)</span></label><input type="text" id="inp-order" placeholder="#1042" autocomplete="off"></div>
+        <div class="field"><label>Notes <span class="optional">(optional)</span></label><input type="text" id="inp-notes" placeholder="Call on arrival" autocomplete="off"></div>
       </div>
       <button class="btn btn-primary" id="add-btn" onclick="submitStop()">Add stop</button>
     </div>
   </div>
-
 </main>
 
 <div class="toast" id="toast"></div>
 
-<!-- Confirm modal -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-card">
     <h3 id="confirm-title">Confirm</h3>
@@ -649,418 +233,177 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbxiqnlZeH7BLBFFsor5rIhjjEkhFmDGsKVxS6KWQuVFska6joEP31rdJMsk3C-BuUr-3Q/exec';
 
 const REASONS = [
-  "Customer not home / no one answered",
-  "Business was closed",
-  "Wrong address / couldn't find location",
-  "Customer refused delivery",
-  "Item damaged, did not deliver",
-  "No parking / couldn't access building",
-  "Customer asked to reschedule",
-  "Driver ran out of time",
-  "Other"
+  "Customer not home / no one answered", "Business was closed",
+  "Wrong address / couldn't find location", "Customer refused delivery",
+  "Item damaged, did not deliver", "No parking / couldn't access building",
+  "Customer asked to reschedule", "Driver ran out of time", "Other"
 ];
 
-let stops = [];
-let allStops = [];
-let currentFilter = 'all';
-let dateOffset = 0;
-let pollTimer = null;
-let lastActionTime = 0;
-let isInteracting = false;
-let interactionTimer = null;
-let pendingPayId = null;
-let pendingPayMethod = '';
-let pendingChangeId = null;
-let receivedByTimers = {};
-let globalMode = false;
-let renderRaf = null;
-let lastStopsHash = '';
-let lastAllStopsHash = '';
+let allStops = [], stops = [], currentFilter = 'all', dateOffset = 0;
+let globalMode = false, pendingPayId = null, pendingPayMethod = '', pendingChangeId = null;
+let lastActionTime = 0, isInteracting = false, interactionTimer = null, pollTimer = null;
+let renderRaf = null, lastAllHash = '', lastStopsHash = '';
 const ACTION_COOLDOWN = 8000;
 
-function hashStops(arr) {
-  // Fast hash: just count + first 3 IDs + last ID. Good enough for change detection.
-  if (!arr.length) return '0';
-  const ids = arr.map(s => s.ID || '').join(',');
-  return arr.length + ':' + ids.slice(0, 200) + ':' + ids.slice(-100);
-}
-
+// ===== UTILITIES =====
 function fmtDate(offset) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const d = new Date(); d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-
 function dateLabel(offset) {
   if (offset === 0) return 'Today';
   if (offset === -1) return 'Yesterday';
   if (offset === 1) return 'Tomorrow';
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
+  const d = new Date(); d.setDate(d.getDate() + offset);
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
-
-function changeDate(delta) {
-  dateOffset += delta;
-  document.getElementById('date-label').textContent = dateLabel(dateOffset);
-  if (globalMode) { globalMode = false; }
-  // If we already have allStops loaded, filter client-side (instant)
-  if (allStops.length > 0) {
-    const dateStr = fmtDate(dateOffset);
-    stops = allStops.filter(s => parseSheetDate(s.Date) === dateStr);
-    renderStops();
-    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
-  } else {
-    // Fallback: fetch from API if not loaded yet
-    document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
-    loadStops();
-  }
-}
-
-function openDatePicker() {
-  const picker = document.getElementById('date-picker');
-  picker.value = fmtDate(dateOffset);
-  picker.showPicker();
-}
-
-function jumpToDate(dateStr) {
-  if (!dateStr) return;
-  const today = fmtDate(0);
-  const diff = Math.round((new Date(dateStr + 'T12:00:00') - new Date(today + 'T12:00:00')) / (1000 * 60 * 60 * 24));
-  dateOffset = diff;
-  document.getElementById('date-label').textContent = dateLabel(dateOffset);
-  if (globalMode) { globalMode = false; }
-  // Same optimization: filter client-side if data is already loaded
-  if (allStops.length > 0) {
-    const targetDate = fmtDate(dateOffset);
-    stops = allStops.filter(s => parseSheetDate(s.Date) === targetDate);
-    renderStops();
-    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
-  } else {
-    document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
-    loadStops();
-  }
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.getElementById('panel-route').classList.toggle('active', tab === 'route');
-  document.getElementById('panel-add').classList.toggle('active', tab === 'add');
-  if (tab === 'add') {
-    document.getElementById('inp-date').value = fmtDate(dateOffset);
-    setTimeout(() => document.getElementById('inp-name').focus(), 100);
-  }
-}
-
-function setFilter(f) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
-  if (globalMode && f !== 'all') { globalMode = false; }
-  renderStops();
-}
-
-function showGlobal(filter) {
-  globalMode = true;
-  currentFilter = filter;
-  // Highlight active metric
-  document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
-  const map = { 'all': 'metric-total', 'delivered': 'metric-delivered', 'paid': 'metric-paid', 'completed': 'metric-completed', 'unpaid': 'metric-unpaid', 'missing': 'metric-missing' };
-  const id = map[filter];
-  if (id) document.getElementById(id).classList.add('active-metric');
-  // Sync filter chips
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
-  renderStops();
-  showToast('Showing all dates');
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-async function apiGet(params) {
-  const url = API_URL + '?' + new URLSearchParams(params).toString();
-  const res = await fetch(url);
-  return res.json();
-}
-
-async function apiPost(body) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify(body)
-  });
-  return res.json();
-}
-
-function parseSheetDate(val) {
+function parseDate(val) {
   if (!val) return '';
   const str = String(val).trim();
-  // Plain text YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  // ISO date string: extract YYYY-MM-DD from the beginning
-  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-  // Google Sheets serial date (number of days since 1899-12-30)
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
   const serial = parseFloat(str);
   if (!isNaN(serial) && serial > 30000 && serial < 100000) {
-    const epoch = new Date(1899, 11, 30); // Dec 30, 1899
-    const d = new Date(epoch.getTime() + serial * 24 * 60 * 60 * 1000);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    const d = new Date(1899, 11, 30); d.setDate(d.getDate() + serial);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  // Try parsing as Date
-  const d = new Date(str);
-  if (!isNaN(d.getTime())) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+  const d = new Date(str); if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   return str;
 }
-
-function isMissing(stop) {
-  // Backend may explicitly mark as 'missing'
-  if (stop.Status === 'missing') return true;
-  // Legacy: 48+ hour pending stops
-  if (stop.Status !== 'pending') return false;
-  const dateStr = parseSheetDate(stop.Date);
-  const stopDate = new Date(dateStr + 'T12:00:00');
-  if (isNaN(stopDate.getTime())) return false;
-  const now = new Date();
-  const hoursDiff = (now - stopDate) / (1000 * 60 * 60);
-  return hoursDiff >= 48;
+function parseTime(val) {
+  if (!val) return '';
+  const str = String(val);
+  if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(str)) return str;
+  const d = new Date(str); if (!isNaN(d.getTime())) {
+    let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,'0');
+    const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
+  return str;
 }
+function escapeHtml(str) { if (str == null) return ''; return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function hashStops(arr) { if (!arr.length) return '0'; const ids = arr.map(s => s.ID || '').join(','); return arr.length + ':' + ids.slice(0,200) + ':' + ids.slice(-100); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+function showConfirm(title, body, onYes) { document.getElementById('confirm-title').textContent = title; document.getElementById('confirm-body').textContent = body; const m = document.getElementById('confirm-modal'); m.classList.add('show'); document.getElementById('confirm-yes').onclick = () => { m.classList.remove('show'); onYes(); }; document.getElementById('confirm-no').onclick = () => m.classList.remove('show'); }
+async function apiGet(params) { const res = await fetch(API_URL + '?' + new URLSearchParams(params)); return res.json(); }
+async function apiPost(body) { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) }); return res.json(); }
 
+// ===== NAVIGATION =====
+function changeDate(delta) {
+  dateOffset += delta; document.getElementById('date-label').textContent = dateLabel(dateOffset);
+  if (globalMode) globalMode = false;
+  if (allStops.length) filterAndRender(); else { document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>'; loadStops(); }
+}
+function openDatePicker() { const p = document.getElementById('date-picker'); p.value = fmtDate(dateOffset); p.showPicker(); }
+function jumpToDate(dateStr) {
+  if (!dateStr) return;
+  const diff = Math.round((new Date(dateStr + 'T12:00:00') - new Date(fmtDate(0) + 'T12:00:00')) / (1000*60*60*24));
+  dateOffset = diff; document.getElementById('date-label').textContent = dateLabel(dateOffset);
+  if (globalMode) globalMode = false;
+  if (allStops.length) filterAndRender(); else { document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>'; loadStops(); }
+}
+function switchTab(tab) { document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab)); document.getElementById('panel-route').classList.toggle('active', tab === 'route'); document.getElementById('panel-add').classList.toggle('active', tab === 'add'); if (tab === 'add') { document.getElementById('inp-date').value = fmtDate(dateOffset); setTimeout(() => document.getElementById('inp-name').focus(), 100); } }
+
+// ===== FILTERS =====
+function setFilter(f) { currentFilter = f; document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f)); if (globalMode && f !== 'all') globalMode = false; renderStops(); }
+function showGlobal(filter) { globalMode = true; currentFilter = filter; document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric')); const map = { all:'metric-total', delivered:'metric-delivered', paid:'metric-paid', completed:'metric-completed', unpaid:'metric-unpaid', missing:'metric-missing' }; if (map[filter]) document.getElementById(map[filter]).classList.add('active-metric'); document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter)); renderStops(); showToast('Showing all dates'); }
+function applyFilter(list) { if (currentFilter === 'all') return list.filter(s => s.Status !== 'completed'); if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid'); if (currentFilter === 'paid') return list.filter(s => s.Payment === 'paid'); if (currentFilter === 'missing') return list.filter(s => isMissing(s)); if (currentFilter === 'completed') return list.filter(s => s.Status === 'completed'); return list.filter(s => s.Status === currentFilter); }
+function isMissing(s) { if (s.Status === 'missing') return true; if (s.Status !== 'pending') return false; const d = new Date(parseDate(s.Date) + 'T12:00:00'); if (isNaN(d.getTime())) return false; return ((new Date() - d) / (1000*60*60)) >= 48; }
+
+// ===== DATA =====
 async function loadStops(silent) {
   if (silent && (Date.now() - lastActionTime) < ACTION_COOLDOWN) return;
-  if (isInteracting) return;
-  if (document.hidden) return;
-  if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) return;
-
-  const refreshBtn = document.getElementById('refresh-btn');
-  if (!silent) refreshBtn.classList.add('spinning');
+  if (isInteracting) return; if (document.hidden) return;
+  const active = document.activeElement; if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
+  const btn = document.getElementById('refresh-btn'); if (!silent) btn.classList.add('spinning');
   try {
-    const dateStr = fmtDate(dateOffset);
-    // Fetch all stops for metrics, but also pass date for potential future optimization
     const data = await apiGet({ action: 'list' });
-    const newAllStops = data.stops || [];
-    const newStops = newAllStops.filter(s => parseSheetDate(s.Date) === dateStr);
-
-    const newAllHash = hashStops(newAllStops);
-    const newStopsHash = hashStops(newStops);
-    if (newAllHash === lastAllStopsHash && newStopsHash === lastStopsHash) {
-      if (!silent) refreshBtn.classList.remove('spinning');
-      return;
-    }
-    lastAllStopsHash = newAllHash;
-    lastStopsHash = newStopsHash;
-
-    allStops = newAllStops;
-    stops = newStops;
+    const newAll = data.stops || [];
+    const dateStr = fmtDate(dateOffset);
+    const newStops = newAll.filter(s => parseDate(s.Date) === dateStr);
+    const newAllHash = hashStops(newAll), newStopsHash = hashStops(newStops);
+    if (newAllHash === lastAllHash && newStopsHash === lastStopsHash) { if (!silent) btn.classList.remove('spinning'); return; }
+    lastAllHash = newAllHash; lastStopsHash = newStopsHash;
+    allStops = newAll; stops = newStops;
     renderStops();
     document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
-  } catch (err) {
-    document.getElementById('header-sub').textContent = 'Connection issue — retrying';
-  }
-  if (!silent) refreshBtn.classList.remove('spinning');
+  } catch (err) { document.getElementById('header-sub').textContent = 'Connection issue'; }
+  if (!silent) btn.classList.remove('spinning');
 }
+function manualRefresh() { loadStops(); }
+function filterAndRender() { const dateStr = fmtDate(dateOffset); stops = allStops.filter(s => parseDate(s.Date) === dateStr); renderStops(); document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase(); }
 
-function manualRefresh() {
-  loadStops(false);
-}
-
+// ===== ACTIONS =====
 async function submitStop() {
-  const name = document.getElementById('inp-name').value.trim();
-  if (!name) { document.getElementById('inp-name').focus(); return; }
-  const btn = document.getElementById('add-btn');
-  btn.disabled = true;
-  btn.textContent = 'Adding...';
+  const name = document.getElementById('inp-name').value.trim(); if (!name) { document.getElementById('inp-name').focus(); return; }
+  const btn = document.getElementById('add-btn'); btn.disabled = true; btn.textContent = 'Adding...';
   try {
     lastActionTime = Date.now();
-    const selectedDate = document.getElementById('inp-date').value || fmtDate(0);
-    await apiPost({
-      action: 'add',
-      name,
-      date: selectedDate,
-      address: document.getElementById('inp-addr').value.trim(),
-      orderNumber: document.getElementById('inp-order').value.trim(),
-      notes: document.getElementById('inp-notes').value.trim()
-    });
+    const date = document.getElementById('inp-date').value || fmtDate(0);
+    await apiPost({ action: 'add', name, date, address: document.getElementById('inp-addr').value.trim(), orderNumber: document.getElementById('inp-order').value.trim(), notes: document.getElementById('inp-notes').value.trim() });
     ['inp-name','inp-addr','inp-order','inp-notes'].forEach(id => document.getElementById(id).value = '');
-    showToast('Stop added for ' + selectedDate);
-    const today = fmtDate(0);
-    const diff = Math.round((new Date(selectedDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / (1000*60*60*24));
-    dateOffset = diff;
-    document.getElementById('date-label').textContent = dateLabel(dateOffset);
-    await loadStops(true);
-    switchTab('route');
-  } catch (err) {
-    showToast('Could not add stop — check connection');
-  }
-  btn.disabled = false;
-  btn.textContent = 'Add stop';
+    showToast('Stop added for ' + date);
+    const diff = Math.round((new Date(date + 'T12:00:00') - new Date(fmtDate(0) + 'T12:00:00')) / (1000*60*60*24));
+    dateOffset = diff; document.getElementById('date-label').textContent = dateLabel(dateOffset);
+    await loadStops(); switchTab('route');
+  } catch (err) { showToast('Could not add stop'); }
+  btn.disabled = false; btn.textContent = 'Add stop';
 }
-
 async function updateField(id, fields) {
   lastActionTime = Date.now();
-  const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id);
-  if (s) Object.assign(s, fields);
+  const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id); if (s) Object.assign(s, fields);
   renderStops();
-  try { await apiPost({ action: 'update', id, fields }); }
-  catch (err) { showToast('Sync issue — will retry'); }
+  try { await apiPost({ action: 'update', id, fields }); } catch (err) { showToast('Sync issue'); }
 }
-
 function markDelivered(id) { updateField(id, { Status: 'delivered', Reason: '' }); }
 function markFailed(id) { updateField(id, { Status: 'not-delivered' }); }
-function markPending(id) {
-  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
-  updateField(id, { Status: 'pending', Reason: '', Payment: '', PayMethod: '', ReceivedBy: '', ResolvedTime: '', PayTime: '' });
-}
-function markComplete(id) {
-  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
-  updateField(id, { Status: 'completed' });
-}
+function markPending(id) { updateField(id, { Status: 'pending', Reason: '', Payment: '', PayMethod: '', ReceivedBy: '', ResolvedTime: '', PayTime: '' }); }
+function markComplete(id) { updateField(id, { Status: 'completed' }); }
 function setReason(id, val) { updateField(id, { Reason: val }); }
 function markPaid(id, method) {
   pendingChangeId = null;
-  if (method === 'check' || method === 'money order') {
-    pendingPayId = id;
-    pendingPayMethod = method;
-    renderStops();
-    setTimeout(() => { const inp = document.getElementById('paynum-' + id); if (inp) inp.focus(); }, 50);
-    return;
-  }
+  if (method === 'check' || method === 'money order') { pendingPayId = id; pendingPayMethod = method; renderStops(); setTimeout(() => { const inp = document.getElementById('paynum-' + id); if (inp) inp.focus(); }, 50); return; }
   updateField(id, { Payment: 'paid', PayMethod: method, ReceivedBy: '', Status: 'delivered' });
 }
 function confirmPayNumber(id) {
-  const inp = document.getElementById('paynum-' + id);
-  const num = inp ? inp.value.trim() : '';
+  const inp = document.getElementById('paynum-' + id); const num = inp ? inp.value.trim() : '';
   const label = pendingPayMethod + (num ? ' #' + num : '');
   pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null;
   updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '', Status: 'delivered' });
 }
 function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null; renderStops(); }
 function markUnpaid(id) { pendingChangeId = null; updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
-function undoPay(id) {
-  pendingChangeId = null;
-  updateField(id, { Payment: '', PayMethod: '', ReceivedBy: '', PayTime: '' });
-}
-function resetPayment(id) {
-  pendingPayId = null; pendingPayMethod = ''; pendingChangeId = id;
-  renderStops();
-}
-
-function showCopyModal() {
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-  const y = tomorrow.getFullYear(), m = String(tomorrow.getMonth()+1).padStart(2,'0'), d = String(tomorrow.getDate()).padStart(2,'0');
-  document.getElementById('copy-target-date').value = `${y}-${m}-${d}`;
-  document.getElementById('copy-modal').style.display = 'block';
-}
-function hideCopyModal() { document.getElementById('copy-modal').style.display = 'none'; }
-async function executeCopyRoute() {
-  const targetDate = document.getElementById('copy-target-date').value;
-  if (!targetDate) { showToast('Pick a target date'); return; }
-  const sourceStops = stops.filter(s => s.Name);
-  if (sourceStops.length === 0) { showToast('No stops to copy'); return; }
-  lastActionTime = Date.now();
-  let copied = 0;
-  // Use the bulk copy endpoint if available, fallback to individual adds
-  try {
-    const res = await apiPost({ action: 'copyRoute', date: targetDate, stops: sourceStops.map(s => ({ name: s.Name||'', address: s.Address||'', notes: s.Notes||'' })) });
-    if (res.success && typeof res.copied === 'number') { copied = res.copied; }
-  } catch (e) {
-    // Fallback: individual adds
-    for (const s of sourceStops) {
-      try {
-        await apiPost({ action: 'add', date: targetDate, name: s.Name||'', address: s.Address||'', orderNumber: '', notes: s.Notes||'' });
-        copied++;
-      } catch (err) { /* continue */ }
-    }
-  }
-  hideCopyModal();
-  showToast(copied + ' stop' + (copied !== 1 ? 's' : '') + ' copied to ' + targetDate);
-  const today = fmtDate(0);
-  const diff = Math.round((new Date(targetDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / (1000*60*60*24));
-  dateOffset = diff;
-  document.getElementById('date-label').textContent = dateLabel(dateOffset);
-  await loadStops(true);
-}
-
+function undoPay(id) { pendingChangeId = null; updateField(id, { Payment: '', PayMethod: '', ReceivedBy: '', PayTime: '' }); }
+function resetPayment(id) { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = id; renderStops(); }
 async function deleteStop(id) {
-  const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id);
-  const name = s ? s.Name : 'this stop';
-  showConfirm('Delete stop?', `Remove "${name}" permanently? This cannot be undone.`, async () => {
-    lastActionTime = Date.now();
-    try {
-      await apiPost({ action: 'delete', id });
-      stops = stops.filter(x => x.ID !== id);
-      allStops = allStops.filter(x => x.ID !== id);
-      renderStops();
-      showToast('Deleted');
-    } catch (err) { showToast('Could not delete — check connection'); }
+  const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id); const name = s ? s.Name : 'this stop';
+  showConfirm('Delete stop?', `Remove "${name}" permanently?`, async () => {
+    lastActionTime = Date.now(); try { await apiPost({ action: 'delete', id }); stops = stops.filter(x => x.ID !== id); allStops = allStops.filter(x => x.ID !== id); renderStops(); showToast('Deleted'); } catch (err) { showToast('Could not delete'); }
   });
 }
 
-function showConfirm(title, body, onConfirm) {
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-body').textContent = body;
-  const modal = document.getElementById('confirm-modal');
-  modal.classList.add('show');
-  const yesBtn = document.getElementById('confirm-yes');
-  const noBtn = document.getElementById('confirm-no');
-  const handler = () => { modal.classList.remove('show'); onConfirm(); };
-  yesBtn.onclick = handler;
-  noBtn.onclick = () => modal.classList.remove('show');
-}
-
+let receivedByTimers = {};
 function setReceivedByLive(id, val) {
-  lastActionTime = Date.now();
-  const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id);
-  if (s) s.ReceivedBy = val;
-  clearTimeout(receivedByTimers[id]);
-  receivedByTimers[id] = setTimeout(() => {
-    apiPost({ action: 'update', id, fields: { ReceivedBy: val } }).catch(() => {});
-  }, 1200); // longer debounce = fewer network calls
-  renderReceivedHint(id, val);
-}
-function renderReceivedHint(id, val) {
-  const hint = document.getElementById('hint-' + id);
-  if (!hint) return;
+  lastActionTime = Date.now(); const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id); if (s) s.ReceivedBy = val;
+  clearTimeout(receivedByTimers[id]); receivedByTimers[id] = setTimeout(() => { apiPost({ action: 'update', id, fields: { ReceivedBy: val } }).catch(() => {}); }, 1200);
+  const hint = document.getElementById('hint-' + id); if (!hint) return;
   if (val && val.trim()) { hint.className = 'ok-text'; hint.innerHTML = 'Received by: ' + escapeHtml(val); }
   else { hint.className = 'warn-text'; hint.textContent = 'Required — enter who received the order'; }
 }
 
-function applyFilter(list) {
-  if (currentFilter === 'all') return list.filter(s => s.Status !== 'completed');
-  if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid');
-  if (currentFilter === 'paid') return list.filter(s => s.Payment === 'paid');
-  if (currentFilter === 'missing') return list.filter(s => isMissing(s));
-  if (currentFilter === 'completed') return list.filter(s => s.Status === 'completed');
-  return list.filter(s => s.Status === currentFilter);
-}
-
+// ===== RENDER =====
 function renderStops() {
   if (renderRaf) cancelAnimationFrame(renderRaf);
-  renderRaf = requestAnimationFrame(() => {
-    renderRaf = null;
-    _renderStopsImpl();
-  });
+  renderRaf = requestAnimationFrame(() => { renderRaf = null; _render(); });
 }
-
-function _renderStopsImpl() {
-  // Active stops = pending + not-delivered (things that still need action)
+function _render() {
   const activeStops = allStops.filter(s => s.Status === 'pending' || s.Status === 'not-delivered');
   const delivered = allStops.filter(s => s.Status === 'delivered').length;
-  const completed = allStops.filter(s => s.Status === 'completed').length;
   const paid = allStops.filter(s => s.Payment === 'paid').length;
+  const completed = allStops.filter(s => s.Status === 'completed').length;
   const unpaid = allStops.filter(s => s.Payment === 'unpaid').length;
   const missing = allStops.filter(s => isMissing(s)).length;
   document.getElementById('m-total').textContent = activeStops.length;
@@ -1070,286 +413,95 @@ function _renderStopsImpl() {
   document.getElementById('m-unpaid').textContent = unpaid;
   document.getElementById('m-missing').textContent = missing;
 
-  // toggle highlight borders based on whether there are items
   document.getElementById('metric-unpaid').classList.toggle('highlight-red', unpaid > 0);
   document.getElementById('metric-missing').classList.toggle('highlight-blue', missing > 0);
-
-  // global banner
   document.getElementById('global-banner').classList.toggle('show', globalMode);
-  if (!globalMode) {
-    document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
-  }
+  if (!globalMode) document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
 
-  const copySection = document.getElementById('copy-route-section');
-  if (copySection) copySection.style.display = stops.length > 0 ? 'block' : 'none';
-
-  const baseList = globalMode ? allStops : stops;
+  const base = globalMode ? allStops : stops;
   const container = document.getElementById('stops-container');
-  const filtered = applyFilter(baseList);
+  const filtered = applyFilter(base);
 
-  if (baseList.length === 0) {
-    container.innerHTML = `<div class="empty-state">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg>
-      <p>No stops for this day yet.<br>Add one from the "Add stop" tab.</p>
-    </div>`;
-    return;
-  }
-  if (filtered.length === 0) {
-    container.innerHTML = `<div class="empty-state"><p>No stops match this filter.</p></div>`;
-    return;
-  }
+  if (base.length === 0) { container.innerHTML = `<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg><p>No stops for this day yet.<br>Add one from the "Add stop" tab.</p></div>`; return; }
+  if (filtered.length === 0) { container.innerHTML = `<div class="empty-state"><p>No stops match this filter.</p></div>`; return; }
 
-  container.innerHTML = filtered.map((s) => {
-    const idx = baseList.indexOf(s) + 1;
+  container.innerHTML = filtered.map((s, i) => {
+    const idx = base.indexOf(s) + 1;
     const stopMissing = isMissing(s);
     const badgeCls = s.Status === 'completed' ? 'badge-delivered' : s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
     const badgeTxt = s.Status === 'completed' ? 'Completed' + (s.Payment === 'paid' ? ' · Paid' : s.Payment === 'unpaid' ? ' · Not paid' : '') : s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
     const cardClass = s.Status === 'completed' ? 'delivered' : s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
 
-    const metaBits = [];
-    if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter)) metaBits.push(parseSheetDate(s.Date));
-    if (s.OrderNumber) metaBits.push(s.OrderNumber);
-    if (s.Address) metaBits.push('Driver: ' + s.Address);
-    if ((currentFilter === 'paid' || currentFilter === 'completed') && s.PayMethod) metaBits.push('Payment: ' + s.PayMethod);
-    if (currentFilter === 'completed' && s.Payment === 'unpaid') metaBits.push('Not paid');
-    if (currentFilter === 'unpaid' && s.Reason) metaBits.push('Reason: ' + s.Reason);
-    metaBits.push('Added ' + parseSheetTime(s.AddedTime || ''));
+    const meta = [];
+    if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter)) meta.push(parseDate(s.Date));
+    if (s.OrderNumber) meta.push(s.OrderNumber);
+    if (s.Address) meta.push('Driver: ' + s.Address);
+    if ((currentFilter === 'paid' || currentFilter === 'completed') && s.PayMethod) meta.push('Payment: ' + s.PayMethod);
+    if (currentFilter === 'completed' && s.Payment === 'unpaid') meta.push('Not paid');
+    if (currentFilter === 'unpaid' && s.Reason) meta.push('Reason: ' + s.Reason);
+    meta.push('Added ' + parseTime(s.AddedTime || ''));
 
     const notesHtml = s.Notes ? `<div class="stop-notes">${escapeHtml(s.Notes)}</div>` : '';
-    let overdueHtml = '';
-    if (stopMissing) {
-      const stopDate = new Date(parseSheetDate(s.Date) + 'T12:00:00');
-      const hoursDiff = Math.floor((new Date() - stopDate) / (1000 * 60 * 60));
-      const days = Math.floor(hoursDiff / 24);
-      overdueHtml = `<div style="font-size:12px;color:var(--purple);font-weight:600;margin-top:6px">⚠ Overdue by ${days} day${days !== 1 ? 's' : ''} — not fulfilled within 48 hours</div>`;
-    }
+    let overdueHtml = ''; if (stopMissing) { const d = new Date(parseDate(s.Date) + 'T12:00:00'); const days = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24)); overdueHtml = `<div style="font-size:12px;color:var(--purple);font-weight:600;margin-top:6px">⚠ Overdue by ${days} day${days!==1?'s':''}</div>`; }
 
-    let reasonHtml = '';
-    if (s.Status === 'not-delivered') {
-      reasonHtml = `<select class="reason-select" data-action="reason" data-id="${s.ID}">
-        <option value="">Select reason for non-delivery</option>
-        ${REASONS.map(r => `<option value="${escapeHtml(r)}" ${s.Reason === r ? 'selected' : ''}>${escapeHtml(r)}</option>`).join('')}
-      </select>
-      ${s.Reason ? `<div class="ok-text">${escapeHtml(s.Reason)}</div>` : `<div class="warn-text">Reason needed</div>`}`;
-    }
+    let reasonHtml = ''; if (s.Status === 'not-delivered') { reasonHtml = `<select class="reason-select" data-action="reason" data-id="${s.ID}"><option value="">Select reason</option>${REASONS.map(r => `<option value="${escapeHtml(r)}" ${s.Reason===r?'selected':''}>${escapeHtml(r)}</option>`).join('')}</select>${s.Reason ? `<div class="ok-text">${escapeHtml(s.Reason)}</div>` : `<div class="warn-text">Reason needed</div>`}`; }
 
     let actionHtml = '';
-    if (s.Status === 'pending') {
-      actionHtml = `<div class="action-row">
-        <button class="btn btn-sm btn-green" data-action="delivered" data-id="${s.ID}">Delivered</button>
-        <button class="btn btn-sm btn-red" data-action="failed" data-id="${s.ID}">Not delivered</button>
-        <button class="btn btn-sm btn-outline" data-action="delete" data-id="${s.ID}">Delete</button>
-      </div>`;
-    } else if (s.Status === 'not-delivered') {
-      actionHtml = `<div class="action-row">
-        <button class="btn-ghost" data-action="delivered" data-id="${s.ID}">Undo — mark delivered instead</button>
-        <button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button>
-      </div>`;
-    } else if (s.Status === 'delivered') {
-      actionHtml = `<div class="action-row">
-        <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Undo — back to pending</button>
-        <button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button>
-        <button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button>
-      </div>`;
-    }
+    if (s.Status === 'pending') actionHtml = `<div class="action-row"><button class="btn btn-sm btn-green" data-action="delivered" data-id="${s.ID}">Delivered</button><button class="btn btn-sm btn-red" data-action="failed" data-id="${s.ID}">Not delivered</button><button class="btn btn-sm btn-outline" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
+    else if (s.Status === 'not-delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="delivered" data-id="${s.ID}">Undo — mark delivered</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
+    else if (s.Status === 'delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button><button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
+    else if (s.Status === 'completed') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
 
     let payHtml = '';
-    if (s.Status === 'delivered') {
+    if (s.Status === 'delivered' || s.Status === 'completed') {
       if (pendingChangeId === s.ID) {
-        payHtml = `<hr class="divider">
-          <div class="pay-label">Change payment to</div>
-          <div class="action-row-wrap">
-            <button class="btn btn-sm btn-green" data-action="payCash" data-id="${s.ID}">Cash</button>
-            <button class="btn btn-sm btn-green" data-action="payCheck" data-id="${s.ID}">Check</button>
-            <button class="btn btn-sm btn-green" data-action="payMO" data-id="${s.ID}">Money order</button>
-            <button class="btn btn-sm btn-red" data-action="payUnpaid" data-id="${s.ID}">Not paid</button>
-            <button class="btn btn-sm btn-outline" data-action="cancelChange">Cancel</button>
-          </div>`;
-        if (s.Payment === 'unpaid') {
-          payHtml += `<div class="pay-input-row">
-            <input type="text" placeholder="Name of person who received order" value="${escapeAttr(s.ReceivedBy || '')}" oninput="setReceivedByLive('${s.ID}', this.value)">
-            <div id="hint-${s.ID}" class="${s.ReceivedBy ? 'ok-text' : 'warn-text'}">${s.ReceivedBy ? 'Received by: ' + escapeHtml(s.ReceivedBy) : 'Required — enter who received the order'}</div>
-          </div>`;
-        }
+        payHtml = `<hr class="divider"><div class="pay-label">Change payment to</div><div class="action-row-wrap"><button class="btn btn-sm btn-green" data-action="payCash" data-id="${s.ID}">Cash</button><button class="btn btn-sm btn-green" data-action="payCheck" data-id="${s.ID}">Check</button><button class="btn btn-sm btn-green" data-action="payMO" data-id="${s.ID}">Money order</button><button class="btn btn-sm btn-red" data-action="payUnpaid" data-id="${s.ID}">Not paid</button><button class="btn btn-sm btn-outline" data-action="cancelChange">Cancel</button></div>`;
       } else if (!s.Payment) {
         if (pendingPayId === s.ID) {
-          payHtml = `<hr class="divider">
-            <div class="pay-label">Enter ${escapeHtml(pendingPayMethod)} number</div>
-            <div class="pay-input-row">
-              <input type="text" id="paynum-${s.ID}" placeholder="${escapeHtml(pendingPayMethod)} number (optional)" onkeydown="if(event.key==='Enter')confirmPayNumber('${s.ID}')">
-              <div class="action-row">
-                <button class="btn btn-sm btn-green" data-action="confirmPay" data-id="${s.ID}">Save</button>
-                <button class="btn btn-sm btn-outline" data-action="cancelPay">Cancel</button>
-              </div>
-            </div>`;
+          payHtml = `<hr class="divider"><div class="pay-label">Enter ${escapeHtml(pendingPayMethod)} number</div><div class="pay-input-row"><input type="text" id="paynum-${s.ID}" placeholder="${escapeHtml(pendingPayMethod)} number" onkeydown="if(event.key==='Enter')confirmPayNumber('${s.ID}')"><div class="action-row"><button class="btn btn-sm btn-green" data-action="confirmPay" data-id="${s.ID}">Save</button><button class="btn btn-sm btn-outline" data-action="cancelPay">Cancel</button></div></div>`;
         } else {
-          payHtml = `<hr class="divider">
-            <div class="pay-label">Payment</div>
-            <div class="action-row-wrap">
-              <button class="btn btn-sm btn-green" data-action="payCash" data-id="${s.ID}">Cash</button>
-              <button class="btn btn-sm btn-green" data-action="payCheck" data-id="${s.ID}">Check</button>
-              <button class="btn btn-sm btn-green" data-action="payMO" data-id="${s.ID}">Money order</button>
-              <button class="btn btn-sm btn-red" data-action="payUnpaid" data-id="${s.ID}">Not paid</button>
-            </div>`;
+          payHtml = `<hr class="divider"><div class="pay-label">Payment</div><div class="action-row-wrap"><button class="btn btn-sm btn-green" data-action="payCash" data-id="${s.ID}">Cash</button><button class="btn btn-sm btn-green" data-action="payCheck" data-id="${s.ID}">Check</button><button class="btn btn-sm btn-green" data-action="payMO" data-id="${s.ID}">Money order</button><button class="btn btn-sm btn-red" data-action="payUnpaid" data-id="${s.ID}">Not paid</button></div>`;
         }
       } else if (s.Payment === 'paid') {
-        payHtml = `<hr class="divider">
-          <div class="pay-status-row">
-            <span class="badge badge-delivered">Paid — ${escapeHtml(s.PayMethod || '')}${s.PayTime ? ' · ' + parseSheetTime(s.PayTime) : ''}</span>
-            <div>
-              <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
-              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo payment</button>
-              <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button>
-            </div>
-          </div>`;
+        payHtml = `<hr class="divider"><div class="pay-status-row"><span class="badge badge-delivered">Paid — ${escapeHtml(s.PayMethod || '')}${s.PayTime ? ' · ' + parseTime(s.PayTime) : ''}</span><div><button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button><button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo payment</button><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button></div></div>`;
       } else if (s.Payment === 'unpaid') {
-        payHtml = `<hr class="divider">
-          <div class="pay-status-row">
-            <span class="badge badge-failed">Not paid${s.PayTime ? ' · ' + parseSheetTime(s.PayTime) : ''}</span>
-            <div>
-              <button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button>
-              <button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo payment</button>
-              <button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button>
-            </div>
-          </div>
-          <div class="pay-input-row">
-            <input type="text" placeholder="Name of person who received order" value="${escapeAttr(s.ReceivedBy || '')}" oninput="setReceivedByLive('${s.ID}', this.value)">
-            <div id="hint-${s.ID}" class="${s.ReceivedBy ? 'ok-text' : 'warn-text'}">${s.ReceivedBy ? 'Received by: ' + escapeHtml(s.ReceivedBy) : 'Required — enter who received the order'}</div>
-          </div>`;
+        payHtml = `<hr class="divider"><div class="pay-status-row"><span class="badge badge-failed">Not paid${s.PayTime ? ' · ' + parseTime(s.PayTime) : ''}</span><div><button class="btn-ghost" data-action="resetPay" data-id="${s.ID}">Change</button><button class="btn-ghost" data-action="undoPay" data-id="${s.ID}">Undo payment</button><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button></div></div><div class="pay-input-row"><input type="text" placeholder="Name of person who received order" value="${escapeHtml(s.ReceivedBy || '')}" oninput="setReceivedByLive('${s.ID}', this.value)"><div id="hint-${s.ID}" class="${s.ReceivedBy ? 'ok-text' : 'warn-text'}">${s.ReceivedBy ? 'Received by: ' + escapeHtml(s.ReceivedBy) : 'Required — enter who received the order'}</div></div>`;
       }
     }
 
-    return `<div class="stop-card ${cardClass}">
-      <div class="stop-top">
-        <div>
-          <div class="stop-num">#${idx}</div>
-          <div class="stop-name">${escapeHtml(s.Name)}</div>
-          <div class="stop-meta">${metaBits.map(escapeHtml).join(' · ')}</div>
-        </div>
-        <span class="badge ${badgeCls}">${badgeTxt}</span>
-      </div>
-      ${notesHtml}
-      ${overdueHtml}
-      ${actionHtml}
-      ${reasonHtml}
-      ${payHtml}
-    </div>`;
+    return `<div class="stop-card ${cardClass}"><div class="stop-top"><div><div class="stop-num">#${idx}</div><div class="stop-name">${escapeHtml(s.Name)}</div><div class="stop-meta">${meta.map(escapeHtml).join(' · ')}</div></div><span class="badge ${badgeCls}">${badgeTxt}</span></div>${notesHtml}${overdueHtml}${actionHtml}${reasonHtml}${payHtml}</div>`;
   }).join('');
 }
 
-function parseSheetTime(val) {
-  if (!val) return '';
-  const str = String(val);
-  if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(str)) return str;
-  const d = new Date(str);
-  if (!isNaN(d.getTime())) {
-    let h = d.getHours();
-    const m = String(d.getMinutes()).padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return `${h}:${m} ${ampm}`;
-  }
-  return str;
-}
-
-function escapeHtml(str) {
-  if (str === undefined || str === null) return '';
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/`/g, '&#96;');
-}
-
-// --- Event delegation for stop cards (fixes mobile ghost-click / refresh-mid-click bugs) ---
+// ===== EVENT DELEGATION =====
 document.getElementById('stops-container').addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  const id = btn.dataset.id;
-  if (action === 'delivered') markDelivered(id);
-  else if (action === 'failed') markFailed(id);
-  else if (action === 'pending') markPending(id);
-  else if (action === 'complete') markComplete(id);
-  else if (action === 'delete') deleteStop(id);
-  else if (action === 'payCash') markPaid(id, 'cash');
-  else if (action === 'payCheck') markPaid(id, 'check');
-  else if (action === 'payMO') markPaid(id, 'money order');
-  else if (action === 'payUnpaid') markUnpaid(id);
-  else if (action === 'confirmPay') confirmPayNumber(id);
-  else if (action === 'cancelPay') cancelPayNumber();
-  else if (action === 'cancelChange') { pendingChangeId = null; renderStops(); }
-  else if (action === 'undoPay') undoPay(id);
-  else if (action === 'resetPay') resetPayment(id);
+  const btn = e.target.closest('[data-action]'); if (!btn) return;
+  const action = btn.dataset.action, id = btn.dataset.id;
+  if (action === 'delivered') markDelivered(id); else if (action === 'failed') markFailed(id); else if (action === 'pending') markPending(id); else if (action === 'complete') markComplete(id); else if (action === 'delete') deleteStop(id); else if (action === 'payCash') markPaid(id, 'cash'); else if (action === 'payCheck') markPaid(id, 'check'); else if (action === 'payMO') markPaid(id, 'money order'); else if (action === 'payUnpaid') markUnpaid(id); else if (action === 'confirmPay') confirmPayNumber(id); else if (action === 'cancelPay') cancelPayNumber(); else if (action === 'cancelChange') { pendingChangeId = null; renderStops(); } else if (action === 'undoPay') undoPay(id); else if (action === 'resetPay') resetPayment(id);
 });
+document.getElementById('stops-container').addEventListener('change', (e) => { if (e.target.classList.contains('reason-select')) setReason(e.target.dataset.id, e.target.value); });
+document.querySelector('.filter-row').addEventListener('click', (e) => { const chip = e.target.closest('.filter-chip'); if (chip) setFilter(chip.dataset.filter); });
+document.body.addEventListener('pointerdown', () => { isInteracting = true; clearTimeout(interactionTimer); interactionTimer = setTimeout(() => isInteracting = false, 500); }, { passive: true });
+document.addEventListener('click', (e) => { const btn = document.getElementById('report-btn'); const dropdown = document.getElementById('report-dropdown'); if (!btn.contains(e.target)) dropdown.classList.remove('show'); });
 
-// Reason select change is not a click — attach separately via delegation
-document.getElementById('stops-container').addEventListener('change', (e) => {
-  if (e.target.classList.contains('reason-select')) {
-    setReason(e.target.dataset.id, e.target.value);
-  }
-});
-
-// Filter chip click delegation
-document.querySelector('.filter-row').addEventListener('click', (e) => {
-  const chip = e.target.closest('.filter-chip');
-  if (chip) setFilter(chip.dataset.filter);
-});
-
-// Pause auto-refresh during any touch / pointer interaction
-document.body.addEventListener('pointerdown', () => {
-  isInteracting = true;
-  clearTimeout(interactionTimer);
-  interactionTimer = setTimeout(() => { isInteracting = false; }, 500);
-}, { passive: true });
-
-// Send report manually
-function toggleReportMenu() {
-  document.getElementById('report-dropdown').classList.toggle('show');
-}
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-  const btn = document.getElementById('report-btn');
-  const dropdown = document.getElementById('report-dropdown');
-  if (!btn.contains(e.target)) dropdown.classList.remove('show');
-});
-
+// ===== REPORTS =====
+function toggleReportMenu() { document.getElementById('report-dropdown').classList.toggle('show'); }
 async function sendReport(type) {
-  const btn = document.getElementById('report-btn');
-  const dropdown = document.getElementById('report-dropdown');
-  dropdown.classList.remove('show');
-  btn.style.opacity = '0.5';
+  const btn = document.getElementById('report-btn'); document.getElementById('report-dropdown').classList.remove('show'); btn.style.opacity = '0.5';
   showToast('Sending ' + type + ' report...');
-  try {
-    const action = type === 'monthly' ? 'sendMonthlyReport' : 'sendReport';
-    await apiPost({ action: action });
-    showToast(capitalize(type) + ' report sent!');
-  } catch (err) {
-    showToast('Could not send report');
-  }
+  try { const action = type === 'monthly' ? 'sendMonthlyReport' : 'sendReport'; await apiPost({ action }); showToast(type.charAt(0).toUpperCase() + type.slice(1) + ' report sent!'); } catch (err) { showToast('Could not send report'); }
   btn.style.opacity = '1';
 }
 
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-// Init
+// ===== INIT =====
 document.getElementById('date-label').textContent = dateLabel(0);
 document.getElementById('inp-date').value = fmtDate(0);
 loadStops();
-pollTimer = setInterval(() => loadStops(true), 60000); // was 15000
-
-// Pause polling when tab is hidden, resume when visible
+pollTimer = setInterval(() => loadStops(true), 60000);
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  } else if (!pollTimer) {
-    pollTimer = setInterval(() => loadStops(true), 60000);
-    loadStops(true); // catch up immediately
-  }
+  if (document.hidden) { clearInterval(pollTimer); pollTimer = null; }
+  else if (!pollTimer) { pollTimer = setInterval(() => loadStops(true), 60000); loadStops(true); }
 });
 </script>
-
 </body>
 </html>
