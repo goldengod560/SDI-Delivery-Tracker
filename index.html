@@ -707,9 +707,17 @@ function changeDate(delta) {
   dateOffset += delta;
   document.getElementById('date-label').textContent = dateLabel(dateOffset);
   if (globalMode) { globalMode = false; }
-  // Immediately clear old data and show loading
-  document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
-  loadStops();
+  // If we already have allStops loaded, filter client-side (instant)
+  if (allStops.length > 0) {
+    const dateStr = fmtDate(dateOffset);
+    stops = allStops.filter(s => parseSheetDate(s.Date) === dateStr);
+    renderStops();
+    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
+  } else {
+    // Fallback: fetch from API if not loaded yet
+    document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
+    loadStops();
+  }
 }
 
 function openDatePicker() {
@@ -725,8 +733,16 @@ function jumpToDate(dateStr) {
   dateOffset = diff;
   document.getElementById('date-label').textContent = dateLabel(dateOffset);
   if (globalMode) { globalMode = false; }
-  document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
-  loadStops();
+  // Same optimization: filter client-side if data is already loaded
+  if (allStops.length > 0) {
+    const targetDate = fmtDate(dateOffset);
+    stops = allStops.filter(s => parseSheetDate(s.Date) === targetDate);
+    renderStops();
+    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
+  } else {
+    document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>';
+    loadStops();
+  }
 }
 
 function switchTab(tab) {
