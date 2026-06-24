@@ -782,6 +782,10 @@ function parseSheetDate(val) {
   if (!val) return '';
   const str = String(val);
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  // Extract YYYY-MM-DD from ISO date strings like "2026-06-22T04:00:00.000Z"
+  // Avoid timezone conversion bugs that shift dates by one day
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
   const d = new Date(str);
   if (!isNaN(d.getTime())) {
     const y = d.getFullYear();
