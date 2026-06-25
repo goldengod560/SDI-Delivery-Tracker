@@ -69,6 +69,12 @@ main { padding:16px; max-width:560px; margin:0 auto; }
 .date-nav .date-label:active { background:var(--bg); }
 .date-picker-input { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
 .view-toggle { font-size:11px; font-weight:600; padding:4px 10px; border-radius:99px; border:1px solid var(--border); background:var(--bg); color:var(--text-soft); cursor:pointer; margin-left:8px; }
+.search-bar { position:relative; margin-bottom:14px; }
+.search-bar input { width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:11px 12px 11px 38px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); -webkit-appearance:none; appearance:none; }
+.search-bar input:focus { outline:none; border-color:var(--text); background:var(--surface); }
+.search-bar svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-faint); pointer-events:none; }
+.search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-faint); font-size:18px; cursor:pointer; padding:2px 6px; line-height:1; display:none; }
+.search-clear.show { display:block; }
 
 .filter-row { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
 .filter-row::-webkit-scrollbar { display:none; }
@@ -190,6 +196,12 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
       <button onclick="changeDate(1)" aria-label="Next"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
     </div>
 
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" id="search-input" placeholder="Search by name, order #, or driver..." oninput="handleSearch()" autocomplete="off">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
+    </div>
+
     <div class="filter-row">
       <div class="filter-chip active" data-filter="all">All</div>
       <div class="filter-chip" data-filter="pending">Pending</div>
@@ -293,7 +305,16 @@ function switchTab(tab) { document.querySelectorAll('.tab').forEach(t => t.class
 // ===== FILTERS =====
 function setFilter(f) { currentFilter = f; document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f)); if (globalMode && f !== 'all') globalMode = false; renderStops(); }
 function showGlobal(filter) { globalMode = true; currentFilter = filter; document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric')); const map = { all:'metric-total', delivered:'metric-delivered', paid:'metric-paid', completed:'metric-completed', unpaid:'metric-unpaid', missing:'metric-missing' }; if (map[filter]) document.getElementById(map[filter]).classList.add('active-metric'); document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter)); renderStops(); showToast('Showing all dates'); }
-function applyFilter(list) { if (currentFilter === 'all') return list.filter(s => s.Status !== 'completed'); if (currentFilter === 'unpaid') return list.filter(s => s.Payment === 'unpaid'); if (currentFilter === 'paid') return list.filter(s => s.Payment === 'paid'); if (currentFilter === 'missing') return list.filter(s => isMissing(s)); if (currentFilter === 'completed') return list.filter(s => s.Status === 'completed'); return list.filter(s => s.Status === currentFilter); }
+function applyFilter(list) {
+  let result = list;
+  if (searchQuery) result = result.filter(s => matchesSearch(s));
+  if (currentFilter === 'all') return result.filter(s => s.Status !== 'completed');
+  if (currentFilter === 'unpaid') return result.filter(s => s.Payment === 'unpaid');
+  if (currentFilter === 'paid') return result.filter(s => s.Payment === 'paid');
+  if (currentFilter === 'missing') return result.filter(s => isMissing(s));
+  if (currentFilter === 'completed') return result.filter(s => s.Status === 'completed');
+  return result.filter(s => s.Status === currentFilter);
+}
 function isMissing(s) { if (s.Status === 'missing') return true; if (s.Status !== 'pending') return false; const d = new Date(parseDate(s.Date) + 'T12:00:00'); if (isNaN(d.getTime())) return false; return ((new Date() - d) / (1000*60*60)) >= 48; }
 
 // ===== DATA =====
@@ -324,6 +345,29 @@ function filterAndRender() {
     document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
   }
   renderStops();
+}
+
+// ===== SEARCH =====
+let searchQuery = '';
+function handleSearch() {
+  const input = document.getElementById('search-input');
+  searchQuery = input.value.trim().toLowerCase();
+  document.getElementById('search-clear').classList.toggle('show', searchQuery.length > 0);
+  renderStops();
+}
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  searchQuery = '';
+  document.getElementById('search-clear').classList.remove('show');
+  renderStops();
+}
+function matchesSearch(s) {
+  if (!searchQuery) return true;
+  const q = searchQuery;
+  return (s.Name && String(s.Name).toLowerCase().includes(q)) ||
+         (s.OrderNumber && String(s.OrderNumber).toLowerCase().includes(q)) ||
+         (s.Address && String(s.Address).toLowerCase().includes(q)) ||
+         (s.Driver && String(s.Driver).toLowerCase().includes(q));
 }
 
 // ===== ACTIONS =====
@@ -413,7 +457,7 @@ function _render() {
   const filtered = applyFilter(base);
 
   if (base.length === 0) { container.innerHTML = `<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg><p>No stops for this ${viewMode === 'month' ? 'month' : 'day'} yet.<br>Add one from the "Add stop" tab.</p></div>`; return; }
-  if (filtered.length === 0) { container.innerHTML = `<div class="empty-state"><p>No stops match this filter.</p></div>`; return; }
+  if (filtered.length === 0) { container.innerHTML = `<div class="empty-state"><p>${searchQuery ? 'No stops match your search.' : 'No stops match this filter.'}</p></div>`; return; }
 
   container.innerHTML = filtered.map((s, i) => {
     const idx = base.indexOf(s) + 1;
