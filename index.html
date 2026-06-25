@@ -68,6 +68,7 @@ main { padding:16px; max-width:560px; margin:0 auto; }
 .date-nav .date-label { font-size:13.5px; font-weight:600; cursor:pointer; padding:4px 8px; border-radius:6px; -webkit-user-select:none; user-select:none; }
 .date-nav .date-label:active { background:var(--bg); }
 .date-picker-input { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+.view-toggle { font-size:11px; font-weight:600; padding:4px 10px; border-radius:99px; border:1px solid var(--border); background:var(--bg); color:var(--text-soft); cursor:pointer; margin-left:8px; }
 
 .filter-row { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
 .filter-row::-webkit-scrollbar { display:none; }
@@ -173,7 +174,7 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
   </div>
 
   <div class="tabs">
-    <div class="tab active" data-tab="route" onclick="switchTab('route')">Today's route</div>
+    <div class="tab active" data-tab="route" onclick="switchTab('route')">Route</div>
     <div class="tab" data-tab="add" onclick="switchTab('add')">Add stop</div>
   </div>
 </header>
@@ -182,10 +183,11 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
   <div class="panel active" id="panel-route">
     <div class="global-banner" id="global-banner">🌍 Showing all dates</div>
     <div class="date-nav">
-      <button onclick="changeDate(-1)" aria-label="Previous day"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <button onclick="changeDate(-1)" aria-label="Previous"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
       <span class="date-label" id="date-label" onclick="openDatePicker()">Today</span>
       <input type="date" id="date-picker" class="date-picker-input" onchange="jumpToDate(this.value)">
-      <button onclick="changeDate(1)" aria-label="Next day"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+      <button class="view-toggle" id="view-toggle" onclick="toggleViewMode()">📅 Month</button>
+      <button onclick="changeDate(1)" aria-label="Next"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
     </div>
 
     <div class="filter-row">
@@ -239,51 +241,20 @@ const REASONS = [
   "Customer asked to reschedule", "Driver ran out of time", "Other"
 ];
 
-let allStops = [], stops = [], currentFilter = 'all', dateOffset = 0;
+let allStops = [], stops = [], currentFilter = 'all', dateOffset = 0, monthOffset = 0;
+let viewMode = 'day'; // 'day' or 'month'
 let globalMode = false, pendingPayId = null, pendingPayMethod = '', pendingChangeId = null;
 let lastActionTime = 0, isInteracting = false, interactionTimer = null, pollTimer = null;
 let renderRaf = null, lastAllHash = '', lastStopsHash = '';
 const ACTION_COOLDOWN = 8000;
 
 // ===== UTILITIES =====
-function fmtDate(offset) {
-  const d = new Date(); d.setDate(d.getDate() + offset);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function dateLabel(offset) {
-  if (offset === 0) return 'Today';
-  if (offset === -1) return 'Yesterday';
-  if (offset === 1) return 'Tomorrow';
-  const d = new Date(); d.setDate(d.getDate() + offset);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-function parseDate(val) {
-  if (!val) return '';
-  const str = String(val).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  const serial = parseFloat(str);
-  if (!isNaN(serial) && serial > 30000 && serial < 100000) {
-    const d = new Date(1899, 11, 30); d.setDate(d.getDate() + serial);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  const d = new Date(str); if (!isNaN(d.getTime())) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  return str;
-}
-function parseTime(val) {
-  if (!val) return '';
-  const str = String(val);
-  if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(str)) return str;
-  const d = new Date(str); if (!isNaN(d.getTime())) {
-    let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,'0');
-    const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
-    return `${h}:${m} ${ampm}`;
-  }
-  return str;
-}
+function fmtDate(offset) { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtMonth(offset) { const d = new Date(); d.setMonth(d.getMonth() + offset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function dateLabel(offset) { if (offset === 0) return 'Today'; if (offset === -1) return 'Yesterday'; if (offset === 1) return 'Tomorrow'; const d = new Date(); d.setDate(d.getDate() + offset); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+function monthLabel(offset) { if (offset === 0) return 'This month'; const d = new Date(); d.setMonth(d.getMonth() + offset); return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); }
+function parseDate(val) { if (!val) return ''; const str = String(val).trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str; const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`; const serial = parseFloat(str); if (!isNaN(serial) && serial > 30000 && serial < 100000) { const d = new Date(1899, 11, 30); d.setDate(d.getDate() + serial); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; } const d = new Date(str); if (!isNaN(d.getTime())) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; } return str; }
+function parseTime(val) { if (!val) return ''; const str = String(val); if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(str)) return str; const d = new Date(str); if (!isNaN(d.getTime())) { let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,'0'); const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m} ${ampm}`; } return str; }
 function escapeHtml(str) { if (str == null) return ''; return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function hashStops(arr) { if (!arr.length) return '0'; const ids = arr.map(s => s.ID || '').join(','); return arr.length + ':' + ids.slice(0,200) + ':' + ids.slice(-100); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
@@ -293,17 +264,29 @@ async function apiPost(body) { const res = await fetch(API_URL, { method: 'POST'
 
 // ===== NAVIGATION =====
 function changeDate(delta) {
-  dateOffset += delta; document.getElementById('date-label').textContent = dateLabel(dateOffset);
+  if (viewMode === 'month') { monthOffset += delta; document.getElementById('date-label').textContent = monthLabel(monthOffset); }
+  else { dateOffset += delta; document.getElementById('date-label').textContent = dateLabel(dateOffset); }
   if (globalMode) globalMode = false;
   if (allStops.length) filterAndRender(); else { document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>'; loadStops(); }
 }
-function openDatePicker() { const p = document.getElementById('date-picker'); p.value = fmtDate(dateOffset); p.showPicker(); }
+function openDatePicker() {
+  if (viewMode === 'month') { toggleViewMode(); return; }
+  const p = document.getElementById('date-picker'); p.value = fmtDate(dateOffset); p.showPicker();
+}
 function jumpToDate(dateStr) {
   if (!dateStr) return;
+  viewMode = 'day'; document.getElementById('view-toggle').textContent = '📅 Month';
   const diff = Math.round((new Date(dateStr + 'T12:00:00') - new Date(fmtDate(0) + 'T12:00:00')) / (1000*60*60*24));
   dateOffset = diff; document.getElementById('date-label').textContent = dateLabel(dateOffset);
   if (globalMode) globalMode = false;
   if (allStops.length) filterAndRender(); else { document.getElementById('stops-container').innerHTML = '<div class="loading-row">Loading stops...</div>'; loadStops(); }
+}
+function toggleViewMode() {
+  viewMode = viewMode === 'day' ? 'month' : 'day';
+  document.getElementById('view-toggle').textContent = viewMode === 'day' ? '📅 Month' : '📆 Day';
+  document.getElementById('date-label').textContent = viewMode === 'day' ? dateLabel(dateOffset) : monthLabel(monthOffset);
+  if (globalMode) globalMode = false;
+  if (allStops.length) filterAndRender(); else loadStops();
 }
 function switchTab(tab) { document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab)); document.getElementById('panel-route').classList.toggle('active', tab === 'route'); document.getElementById('panel-add').classList.toggle('active', tab === 'add'); if (tab === 'add') { document.getElementById('inp-date').value = fmtDate(dateOffset); setTimeout(() => document.getElementById('inp-name').focus(), 100); } }
 
@@ -322,19 +305,26 @@ async function loadStops(silent) {
   try {
     const data = await apiGet({ action: 'list' });
     const newAll = data.stops || [];
-    const dateStr = fmtDate(dateOffset);
-    const newStops = newAll.filter(s => parseDate(s.Date) === dateStr);
-    const newAllHash = hashStops(newAll), newStopsHash = hashStops(newStops);
+    const newAllHash = hashStops(newAll), newStopsHash = hashStops(newAll); // always re-render on load
     if (newAllHash === lastAllHash && newStopsHash === lastStopsHash) { if (!silent) btn.classList.remove('spinning'); return; }
-    lastAllHash = newAllHash; lastStopsHash = newStopsHash;
-    allStops = newAll; stops = newStops;
-    renderStops();
-    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
+    lastAllHash = newAllHash; allStops = newAll;
+    filterAndRender();
   } catch (err) { document.getElementById('header-sub').textContent = 'Connection issue'; }
   if (!silent) btn.classList.remove('spinning');
 }
 function manualRefresh() { loadStops(); }
-function filterAndRender() { const dateStr = fmtDate(dateOffset); stops = allStops.filter(s => parseDate(s.Date) === dateStr); renderStops(); document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase(); }
+function filterAndRender() {
+  if (viewMode === 'month') {
+    const monthStr = fmtMonth(monthOffset);
+    stops = allStops.filter(s => { const d = parseDate(s.Date); return d && d.startsWith(monthStr); });
+    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + monthLabel(monthOffset).toLowerCase();
+  } else {
+    const dateStr = fmtDate(dateOffset);
+    stops = allStops.filter(s => parseDate(s.Date) === dateStr);
+    document.getElementById('header-sub').textContent = stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' · ' + dateLabel(dateOffset).toLowerCase();
+  }
+  renderStops();
+}
 
 // ===== ACTIONS =====
 async function submitStop() {
@@ -346,8 +336,6 @@ async function submitStop() {
     await apiPost({ action: 'add', name, date, address: document.getElementById('inp-addr').value.trim(), orderNumber: document.getElementById('inp-order').value.trim(), notes: document.getElementById('inp-notes').value.trim() });
     ['inp-name','inp-addr','inp-order','inp-notes'].forEach(id => document.getElementById(id).value = '');
     showToast('Stop added for ' + date);
-    const diff = Math.round((new Date(date + 'T12:00:00') - new Date(fmtDate(0) + 'T12:00:00')) / (1000*60*60*24));
-    dateOffset = diff; document.getElementById('date-label').textContent = dateLabel(dateOffset);
     await loadStops(); switchTab('route');
   } catch (err) { showToast('Could not add stop'); }
   btn.disabled = false; btn.textContent = 'Add stop';
@@ -400,12 +388,14 @@ function renderStops() {
   renderRaf = requestAnimationFrame(() => { renderRaf = null; _render(); });
 }
 function _render() {
-  const activeStops = allStops.filter(s => s.Status === 'pending' || s.Status === 'not-delivered');
-  const delivered = allStops.filter(s => s.Status === 'delivered').length;
-  const paid = allStops.filter(s => s.Payment === 'paid').length;
-  const completed = allStops.filter(s => s.Status === 'completed').length;
-  const unpaid = allStops.filter(s => s.Payment === 'unpaid').length;
-  const missing = allStops.filter(s => isMissing(s)).length;
+  // Summary counts for current view (month or day)
+  const viewStops = viewMode === 'month' ? stops : allStops;
+  const activeStops = viewStops.filter(s => s.Status === 'pending' || s.Status === 'not-delivered');
+  const delivered = viewStops.filter(s => s.Status === 'delivered').length;
+  const paid = viewStops.filter(s => s.Payment === 'paid').length;
+  const completed = viewStops.filter(s => s.Status === 'completed').length;
+  const unpaid = viewStops.filter(s => s.Payment === 'unpaid').length;
+  const missing = viewStops.filter(s => isMissing(s)).length;
   document.getElementById('m-total').textContent = activeStops.length;
   document.getElementById('m-delivered').textContent = delivered;
   document.getElementById('m-paid').textContent = paid;
@@ -422,7 +412,7 @@ function _render() {
   const container = document.getElementById('stops-container');
   const filtered = applyFilter(base);
 
-  if (base.length === 0) { container.innerHTML = `<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg><p>No stops for this day yet.<br>Add one from the "Add stop" tab.</p></div>`; return; }
+  if (base.length === 0) { container.innerHTML = `<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg><p>No stops for this ${viewMode === 'month' ? 'month' : 'day'} yet.<br>Add one from the "Add stop" tab.</p></div>`; return; }
   if (filtered.length === 0) { container.innerHTML = `<div class="empty-state"><p>No stops match this filter.</p></div>`; return; }
 
   container.innerHTML = filtered.map((s, i) => {
@@ -433,7 +423,7 @@ function _render() {
     const cardClass = s.Status === 'completed' ? 'delivered' : s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
 
     const meta = [];
-    if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter)) meta.push(parseDate(s.Date));
+    if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter) || viewMode === 'month') meta.push(parseDate(s.Date));
     if (s.OrderNumber) meta.push(s.OrderNumber);
     if (s.Address) meta.push('Driver: ' + s.Address);
     if ((currentFilter === 'paid' || currentFilter === 'completed') && s.PayMethod) meta.push('Payment: ' + s.PayMethod);
@@ -494,7 +484,8 @@ async function sendReport(type) {
 }
 
 // ===== INIT =====
-document.getElementById('date-label').textContent = dateLabel(0);
+document.getElementById('date-label').textContent = monthLabel(0);
+document.getElementById('view-toggle').textContent = '📆 Day';
 document.getElementById('inp-date').value = fmtDate(0);
 loadStops();
 pollTimer = setInterval(() => loadStops(true), 60000);
