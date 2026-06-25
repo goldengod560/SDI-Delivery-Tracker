@@ -143,9 +143,37 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
 .modal-card p { margin:0 0 16px; font-size:13px; color:var(--text-soft); line-height:1.5; }
 .modal-actions { display:flex; gap:8px; }
 .modal-actions .btn { flex:1; }
+
+/* Login overlay */
+.login-overlay { position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
+.login-overlay.hidden { display:none; }
+.login-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:32px; width:100%; max-width:340px; box-shadow:0 12px 32px rgba(0,0,0,0.08); }
+.login-card h2 { margin:0 0 8px; font-size:20px; }
+.login-card p { margin:0 0 24px; font-size:13px; color:var(--text-soft); line-height:1.5; }
+.login-card .field { margin-bottom:16px; }
+.login-card .field label { display:block; font-size:12px; font-weight:600; color:var(--text-soft); margin-bottom:5px; }
+.login-card .field input { width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; font-size:15px; font-family:inherit; background:var(--bg); color:var(--text); }
+.login-card .field input:focus { outline:none; border-color:var(--text); background:var(--surface); }
+.login-card .error-msg { color:var(--red); font-size:12px; margin-top:8px; font-weight:500; display:none; }
+.login-card .error-msg.show { display:block; }
+
 </style>
 </head>
 <body>
+
+<!-- Login overlay -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <h2>🔒 SDI Delivery Tracker</h2>
+    <p>Internal use only. Enter password to access.</p>
+    <div class="field">
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Log in</button>
+    <div class="error-msg" id="login-error">Invalid password</div>
+  </div>
+</div>
 
 <header>
   <div class="header-top">
@@ -253,6 +281,7 @@ const REASONS = [
   "Customer asked to reschedule", "Driver ran out of time", "Other"
 ];
 
+let sessionToken = null;
 let allStops = [], stops = [], currentFilter = 'all', dateOffset = 0, monthOffset = 0;
 let viewMode = 'day'; // 'day' or 'month'
 let globalMode = false, pendingPayId = null, pendingPayMethod = '', pendingChangeId = null;
@@ -271,8 +300,8 @@ function escapeHtml(str) { if (str == null) return ''; return String(str).replac
 function hashStops(arr) { if (!arr.length) return '0'; const ids = arr.map(s => s.ID || '').join(','); return arr.length + ':' + ids.slice(0,200) + ':' + ids.slice(-100); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
 function showConfirm(title, body, onYes) { document.getElementById('confirm-title').textContent = title; document.getElementById('confirm-body').textContent = body; const m = document.getElementById('confirm-modal'); m.classList.add('show'); document.getElementById('confirm-yes').onclick = () => { m.classList.remove('show'); onYes(); }; document.getElementById('confirm-no').onclick = () => m.classList.remove('show'); }
-async function apiGet(params) { const res = await fetch(API_URL + '?' + new URLSearchParams(params)); return res.json(); }
-async function apiPost(body) { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) }); return res.json(); }
+async function apiGet(params) { params.token = sessionToken; const res = await fetch(API_URL + '?' + new URLSearchParams(params)); return res.json(); }
+async function apiPost(body) { body.token = sessionToken; const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) }); return res.json(); }
 
 // ===== NAVIGATION =====
 function changeDate(delta) {
@@ -318,6 +347,36 @@ function applyFilter(list) {
 }
 function isMissing(s) { if (s.Status === 'missing') return true; if (s.Status !== 'pending') return false; const d = new Date(parseDate(s.Date) + 'T12:00:00'); if (isNaN(d.getTime())) return false; return ((new Date() - d) / (1000*60*60)) >= 48; }
 
+// ===== AUTH =====
+async function doLogin() {
+  const pw = document.getElementById('login-password').value.trim();
+  if (!pw) { document.getElementById('login-password').focus(); return; }
+  const btn = document.getElementById('login-btn'); btn.disabled = true; btn.textContent = 'Logging in...';
+  document.getElementById('login-error').classList.remove('show');
+  try {
+    const res = await apiPost({ action: 'login', password: pw });
+    if (res.success && res.token) {
+      sessionToken = res.token;
+      sessionStorage.setItem('sdi_token', res.token);
+      document.getElementById('login-overlay').classList.add('hidden');
+      loadStops();
+    } else {
+      document.getElementById('login-error').classList.add('show');
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-password').focus();
+    }
+  } catch (err) { document.getElementById('login-error').classList.add('show'); }
+  btn.disabled = false; btn.textContent = 'Log in';
+}
+function showLogin() {
+  sessionToken = null;
+  sessionStorage.removeItem('sdi_token');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').classList.remove('show');
+  setTimeout(() => document.getElementById('login-password').focus(), 100);
+}
+
 // ===== DATA =====
 async function loadStops(silent) {
   if (silent && (Date.now() - lastActionTime) < ACTION_COOLDOWN) return;
@@ -326,6 +385,7 @@ async function loadStops(silent) {
   const btn = document.getElementById('refresh-btn'); if (!silent) btn.classList.add('spinning');
   try {
     const data = await apiGet({ action: 'list' });
+    if (data.error === 'Unauthorized') { showLogin(); return; }
     const newAll = data.stops || [];
     const newAllHash = hashStops(newAll), newStopsHash = hashStops(newAll); // always re-render on load
     if (newAllHash === lastAllHash && newStopsHash === lastStopsHash) { if (!silent) btn.classList.remove('spinning'); return; }
@@ -378,7 +438,8 @@ async function submitStop() {
   try {
     lastActionTime = Date.now();
     const date = document.getElementById('inp-date').value || fmtDate(0);
-    await apiPost({ action: 'add', name, date, address: document.getElementById('inp-addr').value.trim(), orderNumber: document.getElementById('inp-order').value.trim(), notes: document.getElementById('inp-notes').value.trim() });
+    const res = await apiPost({ action: 'add', name, date, address: document.getElementById('inp-addr').value.trim(), orderNumber: document.getElementById('inp-order').value.trim(), notes: document.getElementById('inp-notes').value.trim() });
+    if (res.error === 'Unauthorized') { showLogin(); return; }
     ['inp-name','inp-addr','inp-order','inp-notes'].forEach(id => document.getElementById(id).value = '');
     showToast('Stop added for ' + date);
     await loadStops(); switchTab('route');
@@ -389,7 +450,7 @@ async function updateField(id, fields) {
   lastActionTime = Date.now();
   const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id); if (s) Object.assign(s, fields);
   renderStops();
-  try { await apiPost({ action: 'update', id, fields }); } catch (err) { showToast('Sync issue'); }
+  try { const res = await apiPost({ action: 'update', id, fields }); if (res.error === 'Unauthorized') showLogin(); } catch (err) { showToast('Sync issue'); }
 }
 function markDelivered(id) { updateField(id, { Status: 'delivered', Reason: '' }); }
 function markFailed(id) { updateField(id, { Status: 'not-delivered' }); }
@@ -414,7 +475,7 @@ function resetPayment(id) { pendingPayId = null; pendingPayMethod = ''; pendingC
 async function deleteStop(id) {
   const s = stops.find(x => x.ID === id) || allStops.find(x => x.ID === id); const name = s ? s.Name : 'this stop';
   showConfirm('Delete stop?', `Remove "${name}" permanently?`, async () => {
-    lastActionTime = Date.now(); try { await apiPost({ action: 'delete', id }); stops = stops.filter(x => x.ID !== id); allStops = allStops.filter(x => x.ID !== id); renderStops(); showToast('Deleted'); } catch (err) { showToast('Could not delete'); }
+    lastActionTime = Date.now(); try { const res = await apiPost({ action: 'delete', id }); if (res.error === 'Unauthorized') { showLogin(); return; } stops = stops.filter(x => x.ID !== id); allStops = allStops.filter(x => x.ID !== id); renderStops(); showToast('Deleted'); } catch (err) { showToast('Could not delete'); }
   });
 }
 
@@ -533,15 +594,25 @@ function toggleReportMenu() { document.getElementById('report-dropdown').classLi
 async function sendReport(type) {
   const btn = document.getElementById('report-btn'); document.getElementById('report-dropdown').classList.remove('show'); btn.style.opacity = '0.5';
   showToast('Sending ' + type + ' report...');
-  try { const action = type === 'monthly' ? 'sendMonthlyReport' : 'sendReport'; await apiPost({ action }); showToast(type.charAt(0).toUpperCase() + type.slice(1) + ' report sent!'); } catch (err) { showToast('Could not send report'); }
+  try { const action = type === 'monthly' ? 'sendMonthlyReport' : 'sendReport'; const res = await apiPost({ action }); if (res.error === 'Unauthorized') { showLogin(); return; } showToast(type.charAt(0).toUpperCase() + type.slice(1) + ' report sent!'); } catch (err) { showToast('Could not send report'); }
   btn.style.opacity = '1';
 }
 
 // ===== INIT =====
+// Check for stored session token
+const storedToken = sessionStorage.getItem('sdi_token');
+if (storedToken) {
+  sessionToken = storedToken;
+  document.getElementById('login-overlay').classList.add('hidden');
+  loadStops();
+} else {
+  document.getElementById('login-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('login-password').focus(), 100);
+}
+
 document.getElementById('date-label').textContent = monthLabel(0);
 document.getElementById('view-toggle').textContent = '📆 Day';
 document.getElementById('inp-date').value = fmtDate(0);
-loadStops();
 pollTimer = setInterval(() => loadStops(true), 60000);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { clearInterval(pollTimer); pollTimer = null; }
