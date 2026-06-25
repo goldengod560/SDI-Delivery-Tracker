@@ -198,7 +198,7 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
 
     <div class="search-bar">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" id="search-input" placeholder="Search by name, order #, or driver..." oninput="handleSearch()" autocomplete="off">
+      <input type="text" id="search-input" placeholder="Search all orders by anything..." oninput="handleSearch()" autocomplete="off">
       <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
     </div>
 
@@ -364,10 +364,12 @@ function clearSearch() {
 function matchesSearch(s) {
   if (!searchQuery) return true;
   const q = searchQuery;
-  return (s.Name && String(s.Name).toLowerCase().includes(q)) ||
-         (s.OrderNumber && String(s.OrderNumber).toLowerCase().includes(q)) ||
-         (s.Address && String(s.Address).toLowerCase().includes(q)) ||
-         (s.Driver && String(s.Driver).toLowerCase().includes(q));
+  const fields = [
+    s.Name, s.OrderNumber, s.Address, s.Driver, s.Notes,
+    s.Status, s.Reason, s.Payment, s.PayMethod, s.ReceivedBy,
+    parseDate(s.Date), parseTime(s.AddedTime || ''), parseTime(s.PayTime || '')
+  ];
+  return fields.some(f => f && String(f).toLowerCase().includes(q));
 }
 
 // ===== ACTIONS =====
@@ -452,7 +454,7 @@ function _render() {
   document.getElementById('global-banner').classList.toggle('show', globalMode);
   if (!globalMode) document.querySelectorAll('.metric').forEach(m => m.classList.remove('active-metric'));
 
-  const base = globalMode ? allStops : stops;
+  const base = (globalMode || searchQuery) ? allStops : stops;
   const container = document.getElementById('stops-container');
   const filtered = applyFilter(base);
 
