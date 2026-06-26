@@ -420,6 +420,34 @@ function clearSearch() {
   document.getElementById('search-clear').classList.remove('show');
   renderStops();
 }
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const prev = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let curr0 = i;
+    for (let j = 1; j <= n; j++) {
+      const curr = a[i-1] === b[j-1] ? prev[j-1] : Math.min(prev[j-1], prev[j], curr0) + 1;
+      prev[j-1] = curr0;
+      curr0 = curr;
+    }
+    prev[n] = curr0;
+  }
+  return prev[n];
+}
+
+function fuzzyWordMatch(queryWord, field) {
+  if (!field) return false;
+  const words = String(field).toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+  for (const w of words) {
+    const maxDist = queryWord.length < 4 ? 1 : queryWord.length <= 6 ? 2 : 3;
+    if (levenshtein(queryWord, w) <= maxDist) return true;
+  }
+  return false;
+}
+
 function matchesSearch(s) {
   if (!searchQuery) return true;
   const q = searchQuery;
@@ -428,7 +456,19 @@ function matchesSearch(s) {
     s.Status, s.Reason, s.Payment, s.PayMethod, s.ReceivedBy,
     parseDate(s.Date), parseTime(s.AddedTime || ''), parseTime(s.PayTime || '')
   ];
-  return fields.some(f => f && String(f).toLowerCase().includes(q));
+  
+  // Exact substring match
+  if (fields.some(f => f && String(f).toLowerCase().includes(q))) return true;
+  
+  // Fuzzy word match for misspellings
+  const qWords = q.split(/\s+/).filter(w => w.length >= 2);
+  if (qWords.length === 0) return true;
+  
+  for (const qw of qWords) {
+    if (fields.some(f => fuzzyWordMatch(qw, f))) return true;
+  }
+  
+  return false;
 }
 
 // ===== ACTIONS =====
