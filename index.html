@@ -593,7 +593,7 @@ function _render() {
 
     let actionHtml = '';
     if (s.Status === 'pending') actionHtml = `<div class="action-row"><button class="btn btn-sm btn-green" data-action="delivered" data-id="${s.ID}">Delivered</button><button class="btn btn-sm btn-red" data-action="failed" data-id="${s.ID}">Not delivered</button><button class="btn btn-sm btn-outline" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
-    else if (s.Status === 'not-delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="delivered" data-id="${s.ID}">Undo — mark delivered</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
+    else if (s.Status === 'not-delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="delivered" data-id="${s.ID}">Undo — mark delivered</button><button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
     else if (s.Status === 'delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button><button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
     else if (s.Status === 'completed') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
 
