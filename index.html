@@ -574,9 +574,10 @@ function _render() {
   container.innerHTML = filtered.map((s, i) => {
     const idx = base.indexOf(s) + 1;
     const stopMissing = isMissing(s);
-    const badgeCls = s.Status === 'completed' ? 'badge-delivered' : s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
-    const badgeTxt = s.Status === 'completed' ? 'Completed' + (s.Payment === 'paid' ? ' · Paid' : s.Payment === 'unpaid' ? ' · Not paid' : '') : s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
-    const cardClass = s.Status === 'completed' ? 'delivered' : s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
+    const isNotDeliveredHistory = currentFilter === 'not-delivered' && s.Reason && s.Status !== 'not-delivered';
+    const badgeCls = isNotDeliveredHistory ? 'badge-failed' : s.Status === 'completed' ? 'badge-delivered' : s.Status === 'delivered' ? 'badge-delivered' : s.Status === 'not-delivered' ? 'badge-failed' : stopMissing ? 'badge-missing' : 'badge-pending';
+    const badgeTxt = isNotDeliveredHistory ? 'Not delivered' : s.Status === 'completed' ? 'Completed' + (s.Payment === 'paid' ? ' · Paid' : s.Payment === 'unpaid' ? ' · Not paid' : '') : s.Status === 'delivered' ? 'Delivered' : s.Status === 'not-delivered' ? 'Not delivered' : stopMissing ? 'MISSING' : 'Pending';
+    const cardClass = isNotDeliveredHistory ? 'not-delivered' : s.Status === 'completed' ? 'delivered' : s.Status === 'delivered' ? 'delivered' : s.Status === 'not-delivered' ? 'not-delivered' : stopMissing ? 'missing' : 'pending';
 
     const meta = [];
     if (globalMode || ['missing','unpaid','paid','completed'].includes(currentFilter) || viewMode === 'month') meta.push(parseDate(s.Date));
@@ -590,16 +591,17 @@ function _render() {
     const notesHtml = s.Notes ? `<div class="stop-notes">${escapeHtml(s.Notes)}</div>` : '';
     let overdueHtml = ''; if (stopMissing) { const d = new Date(parseDate(s.Date) + 'T12:00:00'); const days = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24)); overdueHtml = `<div style="font-size:12px;color:var(--purple);font-weight:600;margin-top:6px">⚠ Overdue by ${days} day${days!==1?'s':''}</div>`; }
 
-    let reasonHtml = ''; if (s.Status === 'not-delivered') { reasonHtml = `<select class="reason-select" data-action="reason" data-id="${s.ID}"><option value="">Select reason</option>${REASONS.map(r => `<option value="${escapeHtml(r)}" ${s.Reason===r?'selected':''}>${escapeHtml(r)}</option>`).join('')}</select>${s.Reason ? `<div class="ok-text">${escapeHtml(s.Reason)}</div>` : `<div class="warn-text">Reason needed</div>`}`; }
+    let reasonHtml = ''; if (s.Status === 'not-delivered' || isNotDeliveredHistory) { reasonHtml = `<select class="reason-select" data-action="reason" data-id="${s.ID}"><option value="">Select reason</option>${REASONS.map(r => `<option value="${escapeHtml(r)}" ${s.Reason===r?'selected':''}>${escapeHtml(r)}</option>`).join('')}</select>${s.Reason ? `<div class="ok-text">${escapeHtml(s.Reason)}</div>` : `<div class="warn-text">Reason needed</div>`}`; }
 
     let actionHtml = '';
-    if (s.Status === 'pending') actionHtml = `<div class="action-row"><button class="btn btn-sm btn-green" data-action="delivered" data-id="${s.ID}">Delivered</button><button class="btn btn-sm btn-red" data-action="failed" data-id="${s.ID}">Not delivered</button><button class="btn btn-sm btn-outline" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
+    if (isNotDeliveredHistory) actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button></div>`;
+    else if (s.Status === 'pending') actionHtml = `<div class="action-row"><button class="btn btn-sm btn-green" data-action="delivered" data-id="${s.ID}">Delivered</button><button class="btn btn-sm btn-red" data-action="failed" data-id="${s.ID}">Not delivered</button><button class="btn btn-sm btn-outline" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
     else if (s.Status === 'not-delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="delivered" data-id="${s.ID}">Undo — mark delivered</button><button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
     else if (s.Status === 'delivered') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button><button class="btn-ghost" data-action="complete" data-id="${s.ID}">Complete</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
     else if (s.Status === 'completed') actionHtml = `<div class="action-row"><button class="btn-ghost" data-action="pending" data-id="${s.ID}">Back to pending</button><button class="btn-ghost" data-action="delete" data-id="${s.ID}">Delete</button></div>`;
 
     let payHtml = '';
-    if (s.Status === 'delivered' || s.Status === 'completed') {
+    if (!isNotDeliveredHistory && (s.Status === 'delivered' || s.Status === 'completed')) {
       if (pendingChangeId === s.ID) {
         payHtml = `<hr class="divider"><div class="pay-label">Change payment to</div><div class="action-row-wrap"><button class="btn btn-sm btn-green" data-action="payCash" data-id="${s.ID}">Cash</button><button class="btn btn-sm btn-green" data-action="payCheck" data-id="${s.ID}">Check</button><button class="btn btn-sm btn-green" data-action="payMO" data-id="${s.ID}">Money order</button><button class="btn btn-sm btn-red" data-action="payUnpaid" data-id="${s.ID}">Not paid</button><button class="btn btn-sm btn-outline" data-action="cancelChange">Cancel</button></div>`;
       } else if (!s.Payment) {
