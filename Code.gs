@@ -231,7 +231,6 @@ function buildReportHtml(data, type, start, end) {
   html += sumRow('Paid', paid.length, '#1d9e75');
   html += sumRow('Unpaid', unpaid.length, '#d23b3b');
   html += sumRow('Not Delivered', notDelivered.length, '#d23b3b');
-  html += sumRow('Pending', pending.length, '#c9821a');
   html += sumRow('Missing', missing.length, '#7c3aed');
   html += `</table></div>`;
   const nameList = (arr) => { if (!arr.length) return ''; return arr.map(s => `${s.Name} (${String(s.Date || '').slice(0,10)})${s.PayMethod ? ' — ' + s.PayMethod : ''}`).join(', '); };
