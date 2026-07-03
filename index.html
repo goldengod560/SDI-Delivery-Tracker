@@ -188,8 +188,16 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
       <div class="report-btn" id="report-btn" onclick="toggleReportMenu()" aria-label="Send report" title="Send report" style="position:relative">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <div class="report-dropdown" id="report-dropdown">
-          <div class="report-dropdown-item" onclick="sendReport('weekly')">📊 Weekly Report</div>
-          <div class="report-dropdown-item" onclick="sendReport('monthly')">📅 Monthly Report</div>
+          <div id="report-menu">
+            <div class="report-dropdown-item" onclick="showReportPicker('weekly')">📊 Weekly Report</div>
+            <div class="report-dropdown-item" onclick="showReportPicker('monthly')">📅 Monthly Report</div>
+          </div>
+          <div id="report-picker" style="display:none; padding:10px 14px;">
+            <label id="report-picker-label" style="font-size:12px; color:var(--text-soft); display:block; margin-bottom:6px; font-weight:600;">Select a date</label>
+            <input type="date" id="report-picker-input" style="width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); margin-bottom:10px;">
+            <button class="btn btn-primary" style="width:100%; padding:10px; font-size:13px;" onclick="confirmReport()">Send Report</button>
+            <button class="btn btn-outline" style="width:100%; padding:10px; font-size:13px; margin-top:6px;" onclick="cancelReportPicker()">Cancel</button>
+          </div>
         </div>
       </div>
       <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()" aria-label="Refresh">
@@ -634,11 +642,46 @@ document.addEventListener('click', (e) => { const btn = document.getElementById(
 
 // ===== REPORTS =====
 function toggleReportMenu() { document.getElementById('report-dropdown').classList.toggle('show'); }
-async function sendReport(type) {
-  const btn = document.getElementById('report-btn'); document.getElementById('report-dropdown').classList.remove('show'); btn.style.opacity = '0.5';
-  showToast('Sending ' + type + ' report...');
-  try { const action = type === 'monthly' ? 'sendMonthlyReport' : 'sendReport'; const res = await apiPost({ action }); if (res.error === 'Unauthorized') { showLogin(); return; } showToast(type.charAt(0).toUpperCase() + type.slice(1) + ' report sent!'); } catch (err) { showToast('Could not send report'); }
+let reportType = null;
+function showReportPicker(type) {
+  reportType = type;
+  document.getElementById('report-menu').style.display = 'none';
+  document.getElementById('report-picker').style.display = 'block';
+  const input = document.getElementById('report-picker-input');
+  const label = document.getElementById('report-picker-label');
+  if (type === 'weekly') {
+    label.textContent = 'Pick any date in the week';
+    input.type = 'date';
+    input.value = fmtDate(0);
+  } else {
+    label.textContent = 'Pick a month';
+    input.type = 'month';
+    input.value = fmtMonth(0);
+  }
+  setTimeout(() => input.focus(), 50);
+}
+function cancelReportPicker() {
+  reportType = null;
+  document.getElementById('report-menu').style.display = 'block';
+  document.getElementById('report-picker').style.display = 'none';
+}
+async function confirmReport() {
+  const input = document.getElementById('report-picker-input');
+  const dateVal = input.value;
+  if (!dateVal) { showToast('Please select a date'); return; }
+  const btn = document.getElementById('report-btn');
+  document.getElementById('report-dropdown').classList.remove('show');
+  cancelReportPicker();
+  btn.style.opacity = '0.5';
+  showToast('Sending ' + reportType + ' report...');
+  try {
+    const action = reportType === 'monthly' ? 'sendMonthlyReport' : 'sendReport';
+    const res = await apiPost({ action, date: dateVal });
+    if (res.error === 'Unauthorized') { showLogin(); return; }
+    showToast(reportType.charAt(0).toUpperCase() + reportType.slice(1) + ' report sent!');
+  } catch (err) { showToast('Could not send report'); }
   btn.style.opacity = '1';
+  reportType = null;
 }
 
 // ===== INIT =====
