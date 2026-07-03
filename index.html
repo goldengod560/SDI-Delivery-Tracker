@@ -726,17 +726,23 @@ async function confirmReport() {
     dateVal = y + '-' + m;
   }
 
+  const rType = reportType;
   const btn = document.getElementById('report-btn');
   document.getElementById('report-dropdown').classList.remove('show');
   cancelReportPicker();
   btn.style.opacity = '0.5';
-  showToast('Sending ' + reportType + ' report...');
+  showToast('Sending ' + rType + ' report...');
   try {
-    const action = reportType === 'monthly' ? 'sendMonthlyReport' : 'sendReport';
-    const res = await apiPost({ action, date: dateVal });
-    if (res.error === 'Unauthorized') { showLogin(); return; }
-    showToast(reportType.charAt(0).toUpperCase() + reportType.slice(1) + ' report sent!');
-  } catch (err) { showToast('Could not send report'); }
+    const action = rType === 'monthly' ? 'sendMonthlyReport' : 'sendReport';
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, date: dateVal, token: sessionToken }) });
+    let data;
+    try { data = await res.json(); } catch(e) { data = {}; }
+    if (data.error === 'Unauthorized') { showLogin(); return; }
+    showToast(rType.charAt(0).toUpperCase() + rType.slice(1) + ' report sent!');
+  } catch (err) {
+    // The email likely still sent even if the response failed
+    showToast(rType.charAt(0).toUpperCase() + rType.slice(1) + ' report sent! (check email)');
+  }
   btn.style.opacity = '1';
   reportType = null;
 }

@@ -4,7 +4,7 @@
 
 const SHEET_NAME = 'Stops';
 const REPORT_EMAIL = 'sadadelivery1@gmail.com';
-const APP_PASSWORD = 'sdi2026'; // CHANGE THIS to your own password
+const APP_PASSWORD = 'sdi2026';
 const TOKEN_EXPIRY_HOURS = 24;
 
 function getSheet() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME); }
@@ -23,17 +23,17 @@ function doGet(e) {
 function doPost(e) {
   let body; try { body = JSON.parse(e.postData.contents); } catch (err) { return json({ error: 'Invalid JSON' }); }
   const a = body.action;
-  
+
   if (a === 'login') return doLogin(body);
-  
+
   if (!isValidToken(body.token)) return json({ error: 'Unauthorized' });
-  
+
   if (a === 'add') return addStop(body);
   if (a === 'update') return updateStop(body);
   if (a === 'delete') return deleteStop(body);
   if (a === 'copyRoute') return copyRoute(body);
-  if (a === 'sendReport') return sendReport(7, 'weekly');
-  if (a === 'sendMonthlyReport') return sendReport(30, 'monthly');
+  if (a === 'sendReport') return sendReport(7, 'weekly', body.date);
+  if (a === 'sendMonthlyReport') return sendReport(30, 'monthly', body.date);
   return json({ error: 'Unknown action' });
 }
 
@@ -139,26 +139,63 @@ function parseDateVal(val) {
   const d = new Date(str); if (!isNaN(d.getTime())) return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
   return str;
 }
-function sendReport(daysBack, type) {
+
+function sendReport(daysBack, type, dateVal) {
+  let start, end;
+  if (dateVal) {
+    if (type === 'weekly') {
+      const d = new Date(dateVal + 'T12:00:00');
+      const dayOfWeek = d.getDay();
+      start = new Date(d);
+      start.setDate(d.getDate() - dayOfWeek);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+    } else {
+      const parts = dateVal.split('-');
+      if (parts.length === 2) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        start = new Date(year, month, 1);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(year, month + 1, 0);
+        end.setHours(23, 59, 59, 999);
+      }
+    }
+  } else {
+    const now = new Date();
+    start = new Date(now);
+    start.setDate(now.getDate() - daysBack);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+  }
+
   try {
-    const data = getReportData(daysBack);
-    const html = buildReportHtml(data, type, daysBack);
-    const now = new Date(); const start = new Date(now); start.setDate(now.getDate() - daysBack);
-    const subject = `SDI ${type === 'monthly' ? 'Monthly' : 'Weekly'} Report — ${Utilities.formatDate(start, Session.getScriptTimeZone(), 'MMM d')} to ${Utilities.formatDate(now, Session.getScriptTimeZone(), 'MMM d')}`;
+    const data = getReportDataCustom(start, end);
+    const html = buildReportHtml(data, type, start, end);
+    const range = `${Utilities.formatDate(start, Session.getScriptTimeZone(), 'MMM d')} — ${Utilities.formatDate(end, Session.getScriptTimeZone(), 'MMM d, yyyy')}`;
+    const subject = `SDI ${type === 'monthly' ? 'Monthly' : 'Weekly'} Report — ${range}`;
     MailApp.sendEmail({ to: REPORT_EMAIL, subject: subject, htmlBody: html, name: 'SDI Delivery Tracker' });
     return json({ success: true, message: `${type} report sent to ${REPORT_EMAIL}` });
   } catch (err) { return json({ error: String(err.message || err) }); }
 }
 
 function getReportData(daysBack) {
-  const stops = getAllStops();
   const now = new Date(); now.setHours(12,0,0,0);
   const start = new Date(now); start.setDate(now.getDate() - daysBack); start.setHours(0,0,0,0);
+  const end = new Date(now); end.setHours(23,59,59,999);
+  return getReportDataCustom(start, end);
+}
+
+function getReportDataCustom(start, end) {
+  const stops = getAllStops();
   const filtered = stops.filter(s => {
     const dateStr = parseDateVal(s.Date);
     if (!dateStr) return false;
     const d = new Date(dateStr + 'T12:00:00');
-    return !isNaN(d.getTime()) && d >= start && d <= now;
+    return !isNaN(d.getTime()) && d >= start && d <= end;
   });
   return {
     stops: filtered,
@@ -173,16 +210,15 @@ function getReportData(daysBack) {
       const dateStr = parseDateVal(s.Date);
       if (!dateStr) return false;
       const d = new Date(dateStr + 'T12:00:00');
-      return ((now - d) / (1000*60*60)) >= 48;
+      return ((new Date() - d) / (1000*60*60)) >= 48;
     })
   };
 }
 
-function buildReportHtml(data, type, daysBack) {
+function buildReportHtml(data, type, start, end) {
   if (!data) return '<p>No data available.</p>';
   const { stops, delivered, notDelivered, pending, completed, paid, unpaid, missing } = data;
-  const now = new Date(); const start = new Date(now); start.setDate(now.getDate() - daysBack);
-  const range = `${Utilities.formatDate(start, Session.getScriptTimeZone(), 'MMM d')} — ${Utilities.formatDate(now, Session.getScriptTimeZone(), 'MMM d, yyyy')}`;
+  const range = `${Utilities.formatDate(start, Session.getScriptTimeZone(), 'MMM d')} — ${Utilities.formatDate(end, Session.getScriptTimeZone(), 'MMM d, yyyy')}`;
   const title = type === 'monthly' ? 'SDI Monthly Delivery Report' : 'SDI Weekly Delivery Report';
   const total = stops.length;
   let html = `<div style="font-family:Inter,system-ui,sans-serif;max-width:640px;margin:0 auto;color:#1c1f1b"><h1 style="font-size:22px;margin-bottom:4px">${title}</h1><p style="color:#6b6f66;font-size:13px;margin:0 0 20px">${range}</p>`;
