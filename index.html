@@ -192,9 +192,26 @@ select.reason-select { width:100%; border:1px solid var(--border); border-radius
             <div class="report-dropdown-item" onclick="showReportPicker('weekly')">📊 Weekly Report</div>
             <div class="report-dropdown-item" onclick="showReportPicker('monthly')">📅 Monthly Report</div>
           </div>
-          <div id="report-picker" style="display:none; padding:10px 14px;">
-            <label id="report-picker-label" style="font-size:12px; color:var(--text-soft); display:block; margin-bottom:6px; font-weight:600;">Select a date</label>
-            <input type="date" id="report-picker-input" style="width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); margin-bottom:10px;">
+          <div id="report-picker" style="display:none; padding:12px 14px;">
+            <label id="report-picker-label" style="font-size:12px; color:var(--text-soft); display:block; margin-bottom:8px; font-weight:600;">Select a date</label>
+            <!-- Weekly picker: simple date input -->
+            <div id="report-picker-weekly" style="display:none;">
+              <input type="date" id="report-week-date" style="width:100%; border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); margin-bottom:6px;">
+              <div id="report-week-range" style="font-size:11px; color:var(--text-soft); margin-bottom:10px;"></div>
+            </div>
+            <!-- Monthly picker: two dropdowns for month + year -->
+            <div id="report-picker-monthly" style="display:none;">
+              <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <select id="report-month-select" style="flex:1; border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); -webkit-appearance:auto; appearance:auto;">
+                  <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                  <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                  <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                  <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                </select>
+                <select id="report-year-select" style="width:90px; border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px; font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); -webkit-appearance:auto; appearance:auto;">
+                </select>
+              </div>
+            </div>
             <button class="btn btn-primary" style="width:100%; padding:10px; font-size:13px;" onclick="confirmReport()">Send Report</button>
             <button class="btn btn-outline" style="width:100%; padding:10px; font-size:13px; margin-top:6px;" onclick="cancelReportPicker()">Cancel</button>
           </div>
@@ -647,28 +664,68 @@ function showReportPicker(type) {
   reportType = type;
   document.getElementById('report-menu').style.display = 'none';
   document.getElementById('report-picker').style.display = 'block';
-  const input = document.getElementById('report-picker-input');
   const label = document.getElementById('report-picker-label');
+  const weeklyPicker = document.getElementById('report-picker-weekly');
+  const monthlyPicker = document.getElementById('report-picker-monthly');
+
   if (type === 'weekly') {
     label.textContent = 'Pick any date in the week';
-    input.type = 'date';
-    input.value = fmtDate(0);
+    weeklyPicker.style.display = 'block';
+    monthlyPicker.style.display = 'none';
+    const dateInput = document.getElementById('report-week-date');
+    dateInput.value = fmtDate(0);
+    updateWeekRange();
+    dateInput.addEventListener('change', updateWeekRange);
   } else {
     label.textContent = 'Pick a month';
-    input.type = 'month';
-    input.value = fmtMonth(0);
+    weeklyPicker.style.display = 'none';
+    monthlyPicker.style.display = 'block';
+    // Populate year dropdown (current year and 1 year back)
+    const yearSelect = document.getElementById('report-year-select');
+    yearSelect.innerHTML = '';
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= currentYear - 1; y--) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+    // Default to current month
+    const monthSelect = document.getElementById('report-month-select');
+    monthSelect.value = String(new Date().getMonth() + 1).padStart(2, '0');
   }
-  setTimeout(() => input.focus(), 50);
 }
+
+function updateWeekRange() {
+  const dateInput = document.getElementById('report-week-date');
+  const rangeDiv = document.getElementById('report-week-range');
+  if (!dateInput.value) { rangeDiv.textContent = ''; return; }
+  const d = new Date(dateInput.value + 'T12:00:00');
+  const day = d.getDay();
+  const sun = new Date(d); sun.setDate(d.getDate() - day);
+  const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
+  const fmt = (dt) => dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  rangeDiv.textContent = 'Report will cover: ' + fmt(sun) + ' — ' + fmt(sat);
+}
+
 function cancelReportPicker() {
   reportType = null;
   document.getElementById('report-menu').style.display = 'block';
   document.getElementById('report-picker').style.display = 'none';
+  document.getElementById('report-picker-weekly').style.display = 'none';
+  document.getElementById('report-picker-monthly').style.display = 'none';
 }
+
 async function confirmReport() {
-  const input = document.getElementById('report-picker-input');
-  const dateVal = input.value;
-  if (!dateVal) { showToast('Please select a date'); return; }
+  let dateVal;
+  if (reportType === 'weekly') {
+    dateVal = document.getElementById('report-week-date').value;
+    if (!dateVal) { showToast('Please select a date'); return; }
+  } else {
+    const m = document.getElementById('report-month-select').value;
+    const y = document.getElementById('report-year-select').value;
+    dateVal = y + '-' + m;
+  }
+
   const btn = document.getElementById('report-btn');
   document.getElementById('report-dropdown').classList.remove('show');
   cancelReportPicker();
