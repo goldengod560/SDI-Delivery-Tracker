@@ -228,6 +228,7 @@ function buildReportHtml(data, type, start, end) {
   const sumRow = (label, count, color) => `<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">${label}</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:${color}">${count}</td></tr>`;
   html += sumRow('Total Stops', total, '#1c1f1b');
   html += sumRow('Delivered', delivered.length, '#1d9e75');
+  html += sumRow('Paid', paid.length, '#1d9e75');
   html += sumRow('Unpaid', unpaid.length, '#d23b3b');
   html += sumRow('Not Delivered', notDelivered.length, '#d23b3b');
   html += sumRow('Pending', pending.length, '#c9821a');
