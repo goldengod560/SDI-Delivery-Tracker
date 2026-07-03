@@ -309,7 +309,7 @@ const REASONS = [
 let sessionToken = null;
 let allStops = [], stops = [], currentFilter = 'all', dateOffset = 0, monthOffset = 0;
 let viewMode = 'day'; // 'day' or 'month'
-let globalMode = false, pendingPayId = null, pendingPayMethod = '', pendingChangeId = null;
+let globalMode = false, pendingPayId = null, pendingPayMethod = '', pendingChangeId = null, editingStopId = null;
 let lastActionTime = 0, isInteracting = false, interactionTimer = null, pollTimer = null;
 let renderRaf = null, lastAllHash = '', lastStopsHash = '';
 const ACTION_COOLDOWN = 8000;
@@ -322,6 +322,7 @@ function monthLabel(offset) { if (offset === 0) return 'This month'; const d = n
 function parseDate(val) { if (!val) return ''; const str = String(val).trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str; const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`; const serial = parseFloat(str); if (!isNaN(serial) && serial > 30000 && serial < 100000) { const d = new Date(1899, 11, 30); d.setDate(d.getDate() + serial); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; } const d = new Date(str); if (!isNaN(d.getTime())) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; } return str; }
 function parseTime(val) { if (!val) return ''; const str = String(val); if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(str)) return str; const d = new Date(str); if (!isNaN(d.getTime())) { let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,'0'); const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m} ${ampm}`; } return str; }
 function escapeHtml(str) { if (str == null) return ''; return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeAttr(str) { return escapeHtml(str); }
 function hashStops(arr) { if (!arr.length) return '0'; const ids = arr.map(s => s.ID || '').join(','); return arr.length + ':' + ids.slice(0,200) + ':' + ids.slice(-100); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
 function showConfirm(title, body, onYes) { document.getElementById('confirm-title').textContent = title; document.getElementById('confirm-body').textContent = body; const m = document.getElementById('confirm-modal'); m.classList.add('show'); document.getElementById('confirm-yes').onclick = () => { m.classList.remove('show'); onYes(); }; document.getElementById('confirm-no').onclick = () => m.classList.remove('show'); }
@@ -535,6 +536,17 @@ function confirmPayNumber(id) {
   updateField(id, { Payment: 'paid', PayMethod: label, ReceivedBy: '', Status: 'delivered' });
 }
 function cancelPayNumber() { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = null; renderStops(); }
+
+function saveEdit(id) {
+  const name = document.getElementById('edit-name-' + id)?.value.trim();
+  const driver = document.getElementById('edit-driver-' + id)?.value.trim();
+  const order = document.getElementById('edit-order-' + id)?.value.trim();
+  const notes = document.getElementById('edit-notes-' + id)?.value.trim();
+  if (!name) { showToast('Name is required'); return; }
+  editingStopId = null;
+  updateField(id, { Name: name, Address: driver || '', OrderNumber: order || '', Notes: notes || '' });
+  showToast('Stop updated');
+}
 function markUnpaid(id) { pendingChangeId = null; updateField(id, { Payment: 'unpaid', PayMethod: '' }); }
 function undoPay(id) { pendingChangeId = null; updateField(id, { Payment: '', PayMethod: '', ReceivedBy: '', PayTime: '' }); }
 function resetPayment(id) { pendingPayId = null; pendingPayMethod = ''; pendingChangeId = id; renderStops(); }
@@ -642,7 +654,25 @@ function _render() {
       }
     }
 
-    return `<div class="stop-card ${cardClass}"><div class="stop-top"><div><div class="stop-num">#${idx}</div><div class="stop-name">${escapeHtml(s.Name)}</div><div class="stop-meta">${meta.map(escapeHtml).join(' · ')}</div></div><span class="badge ${badgeCls}">${badgeTxt}</span></div>${notesHtml}${overdueHtml}${actionHtml}${reasonHtml}${payHtml}</div>`;
+    // Edit mode
+    let editHtml = '';
+    if (editingStopId === s.ID) {
+      editHtml = `<hr class="divider"><div class="pay-label">Edit stop</div>
+        <div class="pay-input-row">
+          <input type="text" id="edit-name-${s.ID}" value="${escapeAttr(s.Name || '')}" placeholder="Customer name" style="font-weight:600">
+          <input type="text" id="edit-driver-${s.ID}" value="${escapeAttr(s.Address || '')}" placeholder="Delivery person">
+          <input type="text" id="edit-order-${s.ID}" value="${escapeAttr(s.OrderNumber || '')}" placeholder="Order #">
+          <input type="text" id="edit-notes-${s.ID}" value="${escapeAttr(s.Notes || '')}" placeholder="Notes">
+          <div class="action-row">
+            <button class="btn btn-sm btn-green" data-action="saveEdit" data-id="${s.ID}">Save</button>
+            <button class="btn btn-sm btn-outline" data-action="cancelEdit" data-id="${s.ID}">Cancel</button>
+          </div>
+        </div>`;
+    }
+
+    const editBtn = editingStopId !== s.ID ? `<button class="btn-ghost" data-action="edit" data-id="${s.ID}" style="margin-top:4px">✏️ Edit</button>` : '';
+
+    return `<div class="stop-card ${cardClass}"><div class="stop-top"><div><div class="stop-num">#${idx}</div><div class="stop-name">${escapeHtml(s.Name)}</div><div class="stop-meta">${meta.map(escapeHtml).join(' · ')}</div></div><span class="badge ${badgeCls}">${badgeTxt}</span></div>${notesHtml}${overdueHtml}${editBtn}${editHtml}${actionHtml}${reasonHtml}${payHtml}</div>`;
   }).join('');
 }
 
@@ -650,7 +680,7 @@ function _render() {
 document.getElementById('stops-container').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]'); if (!btn) return;
   const action = btn.dataset.action, id = btn.dataset.id;
-  if (action === 'delivered') markDelivered(id); else if (action === 'failed') markFailed(id); else if (action === 'pending') markPending(id); else if (action === 'complete') markComplete(id); else if (action === 'delete') deleteStop(id); else if (action === 'payCash') markPaid(id, 'cash'); else if (action === 'payCheck') markPaid(id, 'check'); else if (action === 'payMO') markPaid(id, 'money order'); else if (action === 'payUnpaid') markUnpaid(id); else if (action === 'confirmPay') confirmPayNumber(id); else if (action === 'cancelPay') cancelPayNumber(); else if (action === 'cancelChange') { pendingChangeId = null; renderStops(); } else if (action === 'undoPay') undoPay(id); else if (action === 'resetPay') resetPayment(id);
+  if (action === 'delivered') markDelivered(id); else if (action === 'failed') markFailed(id); else if (action === 'pending') markPending(id); else if (action === 'complete') markComplete(id); else if (action === 'delete') deleteStop(id); else if (action === 'payCash') markPaid(id, 'cash'); else if (action === 'payCheck') markPaid(id, 'check'); else if (action === 'payMO') markPaid(id, 'money order'); else if (action === 'payUnpaid') markUnpaid(id); else if (action === 'confirmPay') confirmPayNumber(id); else if (action === 'cancelPay') cancelPayNumber(); else if (action === 'cancelChange') { pendingChangeId = null; renderStops(); } else if (action === 'undoPay') undoPay(id); else if (action === 'resetPay') resetPayment(id); else if (action === 'edit') { editingStopId = id; renderStops(); } else if (action === 'cancelEdit') { editingStopId = null; renderStops(); } else if (action === 'saveEdit') { saveEdit(id); }
 });
 document.getElementById('stops-container').addEventListener('change', (e) => { if (e.target.classList.contains('reason-select')) setReason(e.target.dataset.id, e.target.value); });
 document.querySelector('.filter-row').addEventListener('click', (e) => { const chip = e.target.closest('.filter-chip'); if (chip) setFilter(chip.dataset.filter); });
