@@ -160,7 +160,7 @@ let orders = [];
 let currentType = '';
 let currentPhoto = null;
 let currentFilter = 'all';
-const savedDrivers = [];
+let savedDrivers = [];
 
 // Date helpers
 function fmtDate(offset) {
@@ -236,7 +236,7 @@ function showForm(type) {
 
   const allDrivers = [...new Set([...savedDrivers, ...orders.map(o => o.Driver).filter(Boolean)])];
   const pills = allDrivers.length > 0
-    ? `<div class="driver-pills">${allDrivers.map(d => `<button class="driver-pill" onclick="pickDriver(this,'${esc(d)}')">${esc(d)}</button>`).join('')}</div>`
+    ? `<div class="driver-pills">${allDrivers.map(d => `<button class="driver-pill" data-driver="${esc(d)}" onclick="pickDriver(this)">${esc(d)}</button>`).join('')}</div>`
     : '';
 
   document.getElementById('form-area').innerHTML = `<div class="form-card">
@@ -244,7 +244,7 @@ function showForm(type) {
     ${photoHtml}
     ${selectHtml}
     <div class="field"><label>Order name</label><input type="text" id="f-name" placeholder="e.g. Ahmed Store #1042" autocomplete="off"><div class="field-error" id="err-name">Enter the order name</div></div>
-    <div class="field"><label>Delivery person</label>${pills}<input type="text" id="f-driver" placeholder="e.g. John" autocomplete="off"><div class="field-error" id="err-driver">Enter the delivery person</div></div>
+    <div class="field"><label>Delivery person</label>${pills}<input type="text" id="f-driver" placeholder="Tap a saved name or type a new one" autocomplete="off"><div class="field-error" id="err-driver">Enter the delivery person</div></div>
     <div class="form-loading" id="form-loading">Saving...</div>
     <div class="form-btns" id="form-btns">
       <button class="${isBack ? 'btn-save-back' : 'btn-save-out'}" onclick="submitOrder('${type}')">${isBack ? 'Mark not delivered' : 'Mark going out'}</button>
@@ -267,7 +267,8 @@ function showForm(type) {
   setTimeout(() => document.getElementById('f-name').focus(), 100);
 }
 
-function pickDriver(btn, name) {
+function pickDriver(btn) {
+  const name = btn.dataset.driver || '';
   document.querySelectorAll('.driver-pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('f-driver').value = name;
@@ -309,7 +310,7 @@ async function submitOrder(type) {
     }
     hideForm();
     showToast(type === 'out' ? 'Order going out ✓' : 'Not delivered ✓');
-    await loadOrders();
+    await Promise.all([loadDrivers(), loadOrders()]);
   } catch (err) {
     showToast('Saved! Refreshing...');
     hideForm();
@@ -321,6 +322,16 @@ async function submitOrder(type) {
 async function apiPost(body) {
   const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
   try { return await res.json(); } catch(e) { return {}; }
+}
+
+async function loadDrivers() {
+  try {
+    const res = await fetch(API_URL + '?action=drivers');
+    const data = await res.json();
+    savedDrivers = Array.isArray(data.drivers) ? data.drivers : [];
+  } catch (err) {
+    // The app can still work; names can be typed manually if this fails.
+  }
 }
 
 async function loadOrders() {
@@ -382,7 +393,7 @@ function render() {
 function esc(str) { if (str == null) return ''; return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 // Init
-loadOrders();
+Promise.all([loadDrivers(), loadOrders()]);
 setInterval(loadOrders, 30000);
 </script>
 
