@@ -37,7 +37,9 @@
 
   /* Counts */
   .counts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .count-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 8px; text-align: center; }
+  .count-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 8px; text-align: center; transition: all 0.15s; }
+  .count-card:active { transform: scale(0.96); }
+  .count-card.active { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
   .count-val { font-size: 30px; font-weight: 700; line-height: 1; }
   .count-lbl { font-size: 11px; color: var(--text-soft); margin-top: 4px; font-weight: 500; }
 
@@ -121,9 +123,9 @@
 </div>
 
 <div class="counts">
-  <div class="count-card"><div class="count-val" id="c-out" style="color:var(--green)">0</div><div class="count-lbl">Went out</div></div>
-  <div class="count-card"><div class="count-val" id="c-back" style="color:var(--red)">0</div><div class="count-lbl">Came back</div></div>
-  <div class="count-card"><div class="count-val" id="c-delivered">0</div><div class="count-lbl">Delivered</div></div>
+  <div class="count-card" onclick="setFilter('all')" style="cursor:pointer"><div class="count-val" id="c-out" style="color:var(--green)">0</div><div class="count-lbl">Went out</div></div>
+  <div class="count-card" onclick="setFilter('returned')" style="cursor:pointer"><div class="count-val" id="c-back" style="color:var(--red)">0</div><div class="count-lbl">Not delivered</div></div>
+  <div class="count-card" onclick="setFilter('out')" style="cursor:pointer"><div class="count-val" id="c-delivered">0</div><div class="count-lbl">Delivered</div></div>
 </div>
 
 <div id="form-area"></div>
@@ -135,7 +137,7 @@
   </button>
   <button class="big-btn big-btn-back" onclick="startOrder('back')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-    Coming back
+    Not delivered
   </button>
 </div>
 
@@ -157,6 +159,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzo_QLLS5VE6Cw2e6YxSdrk
 let orders = [];
 let currentType = '';
 let currentPhoto = null;
+let currentFilter = 'all';
 const savedDrivers = [];
 
 // Date helpers
@@ -169,6 +172,15 @@ document.getElementById('date-display').textContent = new Date().toLocaleDateStr
 
 // Toast
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.count-card').forEach((card, i) => {
+    const filters = ['all', 'returned', 'out'];
+    card.classList.toggle('active', filters[i] === filter);
+  });
+  render();
+}
 
 // Camera
 const camInput = document.getElementById('cam-input');
@@ -228,14 +240,14 @@ function showForm(type) {
     : '';
 
   document.getElementById('form-area').innerHTML = `<div class="form-card">
-    <div class="form-title"><div class="dot" style="background:${isBack ? 'var(--red)' : 'var(--green)'}"></div>${isBack ? 'Coming back' : 'Going out'}</div>
+    <div class="form-title"><div class="dot" style="background:${isBack ? 'var(--red)' : 'var(--green)'}"></div>${isBack ? 'Not delivered' : 'Going out'}</div>
     ${photoHtml}
     ${selectHtml}
     <div class="field"><label>Order name</label><input type="text" id="f-name" placeholder="e.g. Ahmed Store #1042" autocomplete="off"><div class="field-error" id="err-name">Enter the order name</div></div>
     <div class="field"><label>Delivery person</label>${pills}<input type="text" id="f-driver" placeholder="e.g. John" autocomplete="off"><div class="field-error" id="err-driver">Enter the delivery person</div></div>
     <div class="form-loading" id="form-loading">Saving...</div>
     <div class="form-btns" id="form-btns">
-      <button class="${isBack ? 'btn-save-back' : 'btn-save-out'}" onclick="submitOrder('${type}')">${isBack ? 'Mark returned' : 'Mark going out'}</button>
+      <button class="${isBack ? 'btn-save-back' : 'btn-save-out'}" onclick="submitOrder('${type}')">${isBack ? 'Mark not delivered' : 'Mark going out'}</button>
       <button class="btn-cancel" onclick="hideForm()">Cancel</button>
     </div>
   </div>`;
@@ -296,7 +308,7 @@ async function submitOrder(type) {
       await apiPost({ action: 'addBack', id: existingId || '', name, driver, photo: currentPhoto || '' });
     }
     hideForm();
-    showToast(type === 'out' ? 'Order going out ✓' : 'Order returned ✓');
+    showToast(type === 'out' ? 'Order going out ✓' : 'Not delivered ✓');
     await loadOrders();
   } catch (err) {
     showToast('Saved! Refreshing...');
@@ -330,16 +342,26 @@ function render() {
   document.getElementById('c-back').textContent = backCount;
   document.getElementById('c-delivered').textContent = outCount;
 
+  // Update list header
+  const titles = { all: "All orders today", out: "Delivered orders", returned: "Not delivered orders" };
+  document.getElementById('list-title').textContent = titles[currentFilter] || titles.all;
+
+  // Apply filter
+  let filtered = orders;
+  if (currentFilter === 'out') filtered = orders.filter(o => o.Status === 'out');
+  else if (currentFilter === 'returned') filtered = orders.filter(o => o.Status === 'returned');
+
   const list = document.getElementById('order-list');
-  if (orders.length === 0) {
-    list.innerHTML = `<div class="empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg><p>No orders yet today</p></div>`;
+  if (filtered.length === 0) {
+    const emptyMsg = orders.length === 0 ? 'No orders yet today' : 'No orders in this category';
+    list.innerHTML = `<div class="empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg><p>${emptyMsg}</p></div>`;
     return;
   }
 
-  list.innerHTML = orders.slice().reverse().map(o => {
+  list.innerHTML = filtered.slice().reverse().map(o => {
     const isOut = o.Status === 'out';
-    const badge = isOut ? '<span class="order-badge badge-out">Out for delivery</span>' : '<span class="order-badge badge-back">Returned</span>';
-    const time = isOut ? 'Out ' + (o.TimeOut || '') : 'Back ' + (o.TimeBack || '');
+    const badge = isOut ? '<span class="order-badge badge-out">Out for delivery</span>' : '<span class="order-badge badge-back">Not delivered</span>';
+    const time = isOut ? 'Out ' + (o.TimeOut || '') : 'Returned ' + (o.TimeBack || '');
     const driverText = o.Driver ? ' · ' + esc(o.Driver) : '';
     const photoUrl = isOut ? (o.PhotoOutUrl || '') : (o.PhotoBackUrl || o.PhotoOutUrl || '');
     const thumbHtml = photoUrl ? `<img src="${photoUrl}" class="order-thumb" onerror="this.style.display='none'">` : '';
