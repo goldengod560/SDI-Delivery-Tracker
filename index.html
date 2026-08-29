@@ -395,12 +395,8 @@ async function markNotDelivered(id) {
 }
 
 async function apiPost(body) {
-  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.error || data.success === false) {
-    throw new Error(data.error || 'Save failed');
-  }
-  return data;
+  console.log('API disabled in Preview:', body);
+  return { success: true };
 }
 
 async function loadDrivers() {
