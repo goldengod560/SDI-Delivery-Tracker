@@ -400,24 +400,12 @@ async function apiPost(body) {
 }
 
 async function loadDrivers() {
-  try {
-    const res = await fetch(API_URL + '?action=drivers');
-    const data = await res.json();
-    savedDrivers = Array.isArray(data.drivers) ? data.drivers : [];
-  } catch (err) {
-    // App still works; a driver name can be typed manually.
-  }
+  savedDrivers = JSON.parse(localStorage.getItem('savedDrivers') || '[]');
 }
 
 async function loadOrders() {
-  try {
-    const res = await fetch(API_URL + '?action=list&date=' + encodeURIComponent(today));
-    const data = await res.json();
-    orders = Array.isArray(data.orders) ? data.orders : [];
-    render();
-  } catch (err) {
-    // Keep the last loaded data and retry on the next refresh.
-  }
+  orders = JSON.parse(localStorage.getItem('orders') || '[]');
+  render();
 }
 
 function render() {
