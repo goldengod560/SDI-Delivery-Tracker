@@ -10,460 +10,74 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f2f2f0;
-    --surface: #ffffff;
-    --border: #e0e0dc;
-    --text: #1a1a1a;
-    --text-soft: #6b6b66;
-    --text-faint: #a0a09a;
-    --green: #1d9e75;
-    --green-bg: #e6f5ef;
-    --green-dark: #085041;
-    --blue: #3b6fd8;
-    --blue-bg: #eaf0ff;
-    --blue-dark: #234a9c;
-    --red: #d23b3b;
-    --red-bg: #fce8e8;
-    --red-dark: #7a1f1f;
-    --radius: 10px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-  body { padding: 16px 16px 100px; min-height: 100vh; max-width: 480px; margin: 0 auto; }
-
-  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-  .brand-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
-  .brand h1 { font-size: 18px; font-weight: 600; line-height: 1.2; }
-  .brand p { font-size: 12px; color: var(--text-soft); margin-top: 1px; }
-
-  .counts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .count-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 8px; text-align: center; transition: all 0.15s; }
-  .count-card:active { transform: scale(0.96); }
-  .count-card.active { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
-  .count-val { font-size: 30px; font-weight: 700; line-height: 1; }
-  .count-lbl { font-size: 11px; color: var(--text-soft); margin-top: 4px; font-weight: 500; }
-
-  .big-btns { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-  .big-btn { border: none; border-radius: 14px; padding: 22px 20px; font-size: 18px; font-weight: 600; font-family: inherit; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; }
-  .big-btn:active { transform: scale(0.97); }
-  .big-btn-out { background: var(--green); }
-  .big-btn-delivered { background: var(--blue); }
-  .big-btn svg { flex-shrink: 0; }
-
-  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 20px; }
-  .form-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .form-title .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .field { margin-bottom: 12px; }
-  .field label { font-size: 12px; font-weight: 600; color: var(--text-soft); display: block; margin-bottom: 5px; }
-  .field input, .field select { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-size: 16px; font-family: inherit; background: var(--bg); color: var(--text); }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--text); background: var(--surface); }
-  .field-error { font-size: 12px; color: var(--red); margin-top: 4px; display: none; }
-
-  .driver-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .driver-pill { font-size: 13px; padding: 7px 16px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.1s; }
-  .driver-pill:active { transform: scale(0.96); }
-  .driver-pill.active { background: var(--text); color: #fff; border-color: var(--text); }
-
-  .photo-area { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; background: var(--bg); position: relative; }
-  .photo-preview { width: 100%; max-height: 250px; object-fit: cover; display: block; }
-  .photo-retake { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; }
-  .photo-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); margin: 10px 0 5px; }
-
-  .selected-order { display: none; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius); padding: 10px; margin-bottom: 12px; }
-  .selected-order-name { font-size: 14px; font-weight: 600; }
-  .selected-order-meta { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
-  .selected-order img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 6px; margin-top: 8px; display: block; }
-
-  .form-btns { display: flex; gap: 8px; margin-top: 14px; }
-  .form-btns button { flex: 1; border-radius: var(--radius); padding: 13px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; border: none; }
-  .form-btns button:active { transform: scale(0.97); }
-  .btn-save-out { background: var(--green); color: #fff; }
-  .btn-save-delivered { background: var(--blue); color: #fff; }
-  .btn-cancel { background: var(--bg); color: var(--text); border: 1px solid var(--border) !important; }
-  .cam-input { display: none; }
-
-  .form-loading { text-align: center; padding: 8px 0 4px; font-size: 13px; color: var(--text-soft); display: none; }
-
-  .list-header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-bottom: 10px; }
-  .order-list { display: flex; flex-direction: column; gap: 8px; }
-  .order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
-  .order-card.out { border-left: 4px solid var(--green); }
-  .order-card.returned { border-left: 4px solid var(--red); }
-  .order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .order-name { font-size: 16px; font-weight: 600; }
-  .order-meta { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
-  .order-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
-  .badge-out { background: var(--green-bg); color: var(--green-dark); }
-  .badge-proof { background: var(--blue-bg); color: var(--blue-dark); }
-  .badge-back { background: var(--red-bg); color: var(--red-dark); }
-  .order-thumb { width: 100%; border-radius: 6px; margin-top: 8px; display: block; max-height: 200px; object-fit: cover; }
-  .order-actions { display: flex; gap: 8px; margin-top: 10px; }
-  .order-action { flex: 1; border-radius: 9px; padding: 10px 12px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-  .order-action:active { transform: scale(0.98); }
-  .order-action-back { color: var(--red-dark); background: var(--red-bg); border-color: #f3caca; }
-  .proof-wrap { margin-top: 10px; }
-  .proof-label { font-size: 11px; font-weight: 700; color: var(--blue-dark); margin-bottom: 4px; }
-  .empty { text-align: center; color: var(--text-faint); font-size: 14px; padding: 40px 16px; }
-  .empty svg { margin-bottom: 8px; }
-
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 99px; font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: all 0.2s; z-index: 50; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  :root { --bg:#f2f2f0; --surface:#fff; --border:#e0e0dc; --text:#1a1a1a; --text-soft:#6b6b66; --text-faint:#a0a09a; --green:#1d9e75; --green-bg:#e6f5ef; --green-dark:#085041; --blue:#3b6fd8; --blue-bg:#eaf0ff; --blue-dark:#234a9c; --red:#d23b3b; --red-bg:#fce8e8; --red-dark:#7a1f1f; --radius:10px; }
+  *{box-sizing:border-box;margin:0;padding:0} html,body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;-webkit-tap-highlight-color:transparent} body{padding:16px 16px 100px;min-height:100vh;max-width:480px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:20px}.brand-icon{width:38px;height:38px;border-radius:10px;background:var(--text);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}.brand h1{font-size:18px;font-weight:600;line-height:1.2}.brand p{font-size:12px;color:var(--text-soft);margin-top:1px}
+  .counts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}.count-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 8px;text-align:center;transition:all .15s}.count-card:active{transform:scale(.96)}.count-card.active{border-color:var(--text);box-shadow:0 0 0 1px var(--text)}.count-val{font-size:30px;font-weight:700;line-height:1}.count-lbl{font-size:11px;color:var(--text-soft);margin-top:4px;font-weight:500}
+  .big-btns{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}.big-btn{border:none;border-radius:14px;padding:22px 20px;font-size:18px;font-weight:600;font-family:inherit;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s}.big-btn:active{transform:scale(.97)}.big-btn-out{background:var(--green)}.big-btn-delivered{background:var(--blue)}.big-btn svg{flex-shrink:0}
+  .form-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px}.form-title{font-size:16px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}.form-title .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.field{margin-bottom:12px}.field label{font-size:12px;font-weight:600;color:var(--text-soft);display:block;margin-bottom:5px}.field input,.field select{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:16px;font-family:inherit;background:var(--bg);color:var(--text)}.field input:focus,.field select:focus{outline:none;border-color:var(--text);background:var(--surface)}.field-error{font-size:12px;color:var(--red);margin-top:4px;display:none}
+  .driver-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.driver-pill{font-size:13px;padding:7px 16px;border-radius:99px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;font-weight:500;transition:all .1s}.driver-pill:active{transform:scale(.96)}.driver-pill.active{background:var(--text);color:#fff;border-color:var(--text)}
+  .photo-area{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;background:var(--bg);position:relative}.photo-preview{width:100%;max-height:250px;object-fit:cover;display:block}.photo-retake{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:99px;padding:6px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}.photo-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);margin:10px 0 5px}
+  .selected-order{display:none;border:1px solid var(--border);background:var(--bg);border-radius:var(--radius);padding:10px;margin-bottom:12px}.selected-order-name{font-size:14px;font-weight:600}.selected-order-meta{font-size:12px;color:var(--text-soft);margin-top:2px}.selected-order img{width:100%;max-height:180px;object-fit:cover;border-radius:6px;margin-top:8px;display:block}
+  .form-btns{display:flex;gap:8px;margin-top:14px}.form-btns button{flex:1;border-radius:var(--radius);padding:13px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;border:none}.form-btns button:active{transform:scale(.97)}.btn-save-out{background:var(--green);color:#fff}.btn-save-delivered{background:var(--blue);color:#fff}.btn-cancel{background:var(--bg);color:var(--text);border:1px solid var(--border)!important}.cam-input{display:none}.form-loading{text-align:center;padding:8px 0 4px;font-size:13px;color:var(--text-soft);display:none}
+  .list-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);margin-bottom:10px}.order-list{display:flex;flex-direction:column;gap:8px}.order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}.order-card.out{border-left:4px solid var(--green)}.order-card.returned{border-left:4px solid var(--red)}.order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.order-name{font-size:16px;font-weight:600}.order-meta{font-size:12px;color:var(--text-soft);margin-top:2px}.order-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0}.badge-out{background:var(--green-bg);color:var(--green-dark)}.badge-proof{background:var(--blue-bg);color:var(--blue-dark)}.badge-back{background:var(--red-bg);color:var(--red-dark)}.order-thumb{width:100%;border-radius:6px;margin-top:8px;display:block;max-height:200px;object-fit:cover}.order-actions{display:flex;gap:8px;margin-top:10px}.order-action{flex:1;border-radius:9px;padding:10px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text)}.order-action:active{transform:scale(.98)}.order-action-back{color:var(--red-dark);background:var(--red-bg);border-color:#f3caca}.proof-wrap{margin-top:10px}.proof-label{font-size:11px;font-weight:700;color:var(--blue-dark);margin-bottom:4px}.empty{text-align:center;color:var(--text-faint);font-size:14px;padding:40px 16px}.empty svg{margin-bottom:8px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .2s;z-index:50;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
-
-<div class="brand">
-  <div class="brand-icon">S</div>
-  <div>
-    <h1>SDI Delivery Tracker</h1>
-    <p id="date-display"></p>
-  </div>
-</div>
-
+<div class="brand"><div class="brand-icon">S</div><div><h1>SDI Delivery Tracker</h1><p id="date-display"></p></div></div>
 <div class="counts">
   <div class="count-card" onclick="setFilter('all')" style="cursor:pointer"><div class="count-val" id="c-out" style="color:var(--green)">0</div><div class="count-lbl">Went out</div></div>
   <div class="count-card" onclick="setFilter('returned')" style="cursor:pointer"><div class="count-val" id="c-back" style="color:var(--red)">0</div><div class="count-lbl">Not delivered</div></div>
   <div class="count-card" onclick="setFilter('out')" style="cursor:pointer"><div class="count-val" id="c-delivered" style="color:var(--blue)">0</div><div class="count-lbl">Delivered</div></div>
 </div>
-
 <div id="form-area"></div>
-
 <div class="big-btns" id="main-btns">
-  <button class="big-btn big-btn-out" onclick="startOutgoing()">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-    Going out
-  </button>
-  <button class="big-btn big-btn-delivered" onclick="startDelivered()">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-    Delivered
-  </button>
+  <button class="big-btn big-btn-out" onclick="startOutgoing()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>Going out</button>
+  <button class="big-btn big-btn-delivered" onclick="startDelivered()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>Delivered</button>
 </div>
-
 <input type="file" accept="image/*" capture="environment" id="cam-input" class="cam-input">
-
 <div class="list-header" id="list-title">Today's orders</div>
-<div class="order-list" id="order-list">
-  <div class="empty">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-    <p>No orders yet today</p>
-  </div>
-</div>
-
+<div class="order-list" id="order-list"><div class="empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg><p>No orders yet today</p></div></div>
 <div class="toast" id="toast"></div>
-
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbzo_QLLS5VE6Cw2e6YxSdrkZmDELJM2G1HgWkXHWJeLuYU5qSpryYh_6usuu_52kRq0pQ/exec';
-
-let orders = [];
-let currentPhoto = null;
-let cameraMode = '';
-let currentFilter = 'all';
-let savedDrivers = [];
-
-function fmtDate(offset) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-const today = fmtDate(0);
-document.getElementById('date-display').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2400);
-}
-
-function setFilter(filter) {
-  currentFilter = filter;
-  document.querySelectorAll('.count-card').forEach((card, i) => {
-    const filters = ['all', 'returned', 'out'];
-    card.classList.toggle('active', filters[i] === filter);
-  });
-  render();
-}
-
-const camInput = document.getElementById('cam-input');
-
-function startOutgoing() {
-  cameraMode = 'out';
-  currentPhoto = null;
-  camInput.value = '';
-  camInput.click();
-}
-
-function startDelivered() {
-  const available = orders.filter(o => o.Status === 'out');
-  if (available.length === 0) {
-    showToast('No orders available to add delivery proof');
-    return;
-  }
-  cameraMode = 'delivered';
-  currentPhoto = null;
-  camInput.value = '';
-  camInput.click();
-}
-
-camInput.addEventListener('change', function() {
-  if (!this.files || !this.files[0]) return;
-  const file = this.files[0];
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    compressImage(e.target.result, 800, 0.7, function(compressed) {
-      currentPhoto = compressed;
-      if (cameraMode === 'out') showOutgoingForm();
-      else if (cameraMode === 'delivered') showDeliveredForm();
-    });
-  };
-  reader.readAsDataURL(file);
-});
-
-function compressImage(dataUrl, maxWidth, quality, callback) {
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    let w = img.width;
-    let h = img.height;
-    if (w > maxWidth) {
-      h = Math.round(h * maxWidth / w);
-      w = maxWidth;
-    }
-    canvas.width = w;
-    canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    callback(canvas.toDataURL('image/jpeg', quality));
-  };
-  img.src = dataUrl;
-}
-
-function photoPreviewHtml(label) {
-  return `<div class="photo-label">${esc(label)}</div><div class="photo-area"><img src="${currentPhoto}" class="photo-preview"><button class="photo-retake" onclick="retakePhoto()">📷 Retake</button></div>`;
-}
-
-function showOutgoingForm() {
-  const allDrivers = [...new Set([...savedDrivers, ...orders.map(o => o.Driver).filter(Boolean)])];
-  const pills = allDrivers.length > 0
-    ? `<div class="driver-pills">${allDrivers.map(d => `<button type="button" class="driver-pill" data-driver="${esc(d)}" onclick="pickDriver(this)">${esc(d)}</button>`).join('')}</div>`
-    : '';
-
-  document.getElementById('form-area').innerHTML = `<div class="form-card">
-    <div class="form-title"><div class="dot" style="background:var(--green)"></div>Going out</div>
-    ${photoPreviewHtml('Invoice photo')}
-    <div class="field"><label>Order name</label><input type="text" id="f-name" placeholder="e.g. Ahmed Store #1042" autocomplete="off"><div class="field-error" id="err-name">Enter the order name</div></div>
-    <div class="field"><label>Delivery person</label>${pills}<input type="text" id="f-driver" placeholder="Tap a saved name or type a new one" autocomplete="off"><div class="field-error" id="err-driver">Enter the delivery person</div></div>
-    <div class="form-loading" id="form-loading">Saving...</div>
-    <div class="form-btns" id="form-btns">
-      <button class="btn-save-out" onclick="saveOutgoing()">Mark going out</button>
-      <button class="btn-cancel" onclick="hideForm()">Cancel</button>
-    </div>
-  </div>`;
-
-  document.getElementById('main-btns').style.display = 'none';
-  setTimeout(() => document.getElementById('f-name').focus(), 100);
-}
-
-function showDeliveredForm() {
-  const available = orders.filter(o => o.Status === 'out');
-  if (available.length === 0) {
-    showToast('No orders available to add delivery proof');
-    currentPhoto = null;
-    return;
-  }
-
-  const options = available.map(o => `<option value="${esc(o.ID)}">${esc(o.Name)}${o.Driver ? ' — ' + esc(o.Driver) : ''}</option>`).join('');
-
-  document.getElementById('form-area').innerHTML = `<div class="form-card">
-    <div class="form-title"><div class="dot" style="background:var(--blue)"></div>Delivered</div>
-    ${photoPreviewHtml('Delivery proof')}
-    <div class="field"><label>Which order was delivered?</label><select id="f-delivered-order" onchange="showSelectedOrder()"><option value="">-- pick an order --</option>${options}</select><div class="field-error" id="err-delivered">Select the order</div></div>
-    <div class="selected-order" id="selected-order"></div>
-    <div class="form-loading" id="form-loading">Saving...</div>
-    <div class="form-btns" id="form-btns">
-      <button class="btn-save-delivered" onclick="saveDeliveredPhoto()">Save delivery photo</button>
-      <button class="btn-cancel" onclick="hideForm()">Cancel</button>
-    </div>
-  </div>`;
-
-  document.getElementById('main-btns').style.display = 'none';
-}
-
-function showSelectedOrder() {
-  const select = document.getElementById('f-delivered-order');
-  const box = document.getElementById('selected-order');
-  const order = orders.find(o => o.ID === select.value);
-  document.getElementById('err-delivered').style.display = 'none';
-  if (!order) {
-    box.style.display = 'none';
-    box.innerHTML = '';
-    return;
-  }
-  const invoice = order.PhotoOutUrl ? `<img src="${esc(order.PhotoOutUrl)}" alt="Invoice photo" onerror="this.style.display='none'">` : '';
-  box.innerHTML = `<div class="selected-order-name">${esc(order.Name)}</div><div class="selected-order-meta">${esc(order.Driver || '')}</div>${invoice}`;
-  box.style.display = 'block';
-}
-
-function pickDriver(btn) {
-  const name = btn.dataset.driver || '';
-  document.querySelectorAll('.driver-pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('f-driver').value = name;
-}
-
-function retakePhoto() {
-  camInput.value = '';
-  camInput.click();
-}
-
-function hideForm() {
-  document.getElementById('form-area').innerHTML = '';
-  document.getElementById('main-btns').style.display = 'flex';
-  currentPhoto = null;
-  cameraMode = '';
-}
-
-function setFormLoading(isLoading) {
-  const btns = document.getElementById('form-btns');
-  const loading = document.getElementById('form-loading');
-  if (btns) btns.style.display = isLoading ? 'none' : 'flex';
-  if (loading) loading.style.display = isLoading ? 'block' : 'none';
-}
-
-async function saveOutgoing() {
-  const nameInput = document.getElementById('f-name');
-  const driverInput = document.getElementById('f-driver');
-  const name = nameInput.value.trim();
-  const driver = driverInput.value.trim();
-
-  let hasErr = false;
-  if (!name) {
-    document.getElementById('err-name').style.display = 'block';
-    hasErr = true;
-  }
-  if (!driver) {
-    document.getElementById('err-driver').style.display = 'block';
-    hasErr = true;
-  }
-  if (hasErr) return;
-
-  setFormLoading(true);
-  try {
-    await apiPost({ action: 'addOut', name, driver, photo: currentPhoto || '' });
-    hideForm();
-    showToast('Order going out ✓');
-    await Promise.all([loadDrivers(), loadOrders()]);
-  } catch (err) {
-    setFormLoading(false);
-    showToast('NOT SAVED — please retry');
-  }
-}
-
-async function saveDeliveredPhoto() {
-  const select = document.getElementById('f-delivered-order');
-  const id = select.value;
-  if (!id) {
-    document.getElementById('err-delivered').style.display = 'block';
-    return;
-  }
-
-  setFormLoading(true);
-  try {
-    await apiPost({ action: 'addDeliveredPhoto', id, photo: currentPhoto || '' });
-    hideForm();
-    showToast('Delivery photo saved ✓');
-    await loadOrders();
-  } catch (err) {
-    setFormLoading(false);
-    showToast('NOT SAVED — please retry');
-  }
-}
-
-async function markNotDelivered(id) {
-  const order = orders.find(o => o.ID === id);
-  if (!order || order.Status !== 'out') return;
-  if (!window.confirm(`Mark ${order.Name} as not delivered?`)) return;
-
-  try {
-    await apiPost({ action: 'addBack', id });
-    showToast('Marked not delivered');
-    await loadOrders();
-  } catch (err) {
-    showToast('NOT SAVED — please retry');
-  }
-}
-
-async function apiPost(body) {
-  console.log('API disabled in Preview:', body);
-  return { success: true };
-}
-
-async function loadDrivers() {
-  savedDrivers = JSON.parse(localStorage.getItem('savedDrivers') || '[]');
-}
-
-async function loadOrders() {
-  orders = JSON.parse(localStorage.getItem('orders') || '[]');
-  render();
-}
-
-function render() {
-  const outCount = orders.filter(o => o.Status === 'out').length;
-  const backCount = orders.filter(o => o.Status === 'returned').length;
-  document.getElementById('c-out').textContent = outCount + backCount;
-  document.getElementById('c-back').textContent = backCount;
-  document.getElementById('c-delivered').textContent = outCount;
-
-  const titles = { all: 'All orders today', out: 'Delivered orders', returned: 'Not delivered orders' };
-  document.getElementById('list-title').textContent = titles[currentFilter] || titles.all;
-
-  let filtered = orders;
-  if (currentFilter === 'out') filtered = orders.filter(o => o.Status === 'out');
-  else if (currentFilter === 'returned') filtered = orders.filter(o => o.Status === 'returned');
-
-  const list = document.getElementById('order-list');
-  if (filtered.length === 0) {
-    const emptyMsg = orders.length === 0 ? 'No orders yet today' : 'No orders in this category';
-    list.innerHTML = `<div class="empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg><p>${emptyMsg}</p></div>`;
-    return;
-  }
-
-  list.innerHTML = filtered.slice().reverse().map(o => {
-    const isOut = o.Status === 'out';
-    const hasProof = Boolean(o.PhotoDeliveredUrl);
-    const badge = isOut
-      ? (hasProof ? '<span class="order-badge badge-proof">Delivery photo ✓</span>' : '<span class="order-badge badge-out">Out for delivery</span>')
-      : '<span class="order-badge badge-back">Not delivered</span>';
-    const time = isOut ? 'Out ' + (o.TimeOut || '') : 'Returned ' + (o.TimeBack || '');
-    const driverText = o.Driver ? ' · ' + esc(o.Driver) : '';
-    const invoiceHtml = o.PhotoOutUrl ? `<div class="photo-label">Invoice</div><img src="${esc(o.PhotoOutUrl)}" class="order-thumb" onerror="this.style.display='none'">` : '';
-    const proofHtml = o.PhotoDeliveredUrl ? `<div class="proof-wrap"><div class="proof-label">Delivery proof</div><img src="${esc(o.PhotoDeliveredUrl)}" class="order-thumb" onerror="this.style.display='none'"></div>` : '';
-    const actions = isOut ? `<div class="order-actions"><button class="order-action order-action-back" onclick="markNotDelivered('${esc(o.ID)}')">Not delivered</button></div>` : '';
-
-    return `<div class="order-card ${o.Status}">
-      <div class="order-top">
-        <div>
-          <div class="order-name">${esc(o.Name)}</div>
-          <div class="order-meta">${time}${driverText}</div>
-        </div>
-        ${badge}
-      </div>
-      ${invoiceHtml}
-      ${proofHtml}
-      ${actions}
-    </div>`;
-  }).join('');
-}
-
-function esc(str) {
-  if (str == null) return '';
-  return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-}
-
-Promise.all([loadDrivers(), loadOrders()]);
-setInterval(loadOrders, 30000);
+const ORDER_STORAGE_KEY='sdiPreviewOrdersV1';
+const DRIVER_STORAGE_KEY='sdiPreviewDriversV1';
+let orders=[];let currentPhoto=null;let cameraMode='';let currentFilter='all';let savedDrivers=[];
+function fmtDate(offset){const d=new Date();d.setDate(d.getDate()+offset);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const today=fmtDate(0);
+document.getElementById('date-display').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function setFilter(filter){currentFilter=filter;document.querySelectorAll('.count-card').forEach((card,i)=>{const filters=['all','returned','out'];card.classList.toggle('active',filters[i]===filter)});render()}
+const camInput=document.getElementById('cam-input');
+function startOutgoing(){cameraMode='out';currentPhoto=null;camInput.value='';camInput.click()}
+function startDelivered(){const available=orders.filter(o=>o.Status==='out');if(!available.length){showToast('No orders available to add delivery proof');return}cameraMode='delivered';currentPhoto=null;camInput.value='';camInput.click()}
+camInput.addEventListener('change',function(){if(!this.files||!this.files[0])return;const reader=new FileReader();reader.onload=e=>compressImage(e.target.result,800,.7,compressed=>{currentPhoto=compressed;if(cameraMode==='out')showOutgoingForm();else if(cameraMode==='delivered')showDeliveredForm()});reader.readAsDataURL(this.files[0])});
+function compressImage(dataUrl,maxWidth,quality,callback){const img=new Image();img.onload=function(){const canvas=document.createElement('canvas');let w=img.width,h=img.height;if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);callback(canvas.toDataURL('image/jpeg',quality))};img.src=dataUrl}
+function photoPreviewHtml(label){return `<div class="photo-label">${esc(label)}</div><div class="photo-area"><img src="${currentPhoto}" class="photo-preview"><button class="photo-retake" onclick="retakePhoto()">📷 Retake</button></div>`}
+function showOutgoingForm(){const allDrivers=[...new Set([...savedDrivers,...orders.map(o=>o.Driver).filter(Boolean)])];const pills=allDrivers.length?`<div class="driver-pills">${allDrivers.map(d=>`<button type="button" class="driver-pill" data-driver="${esc(d)}" onclick="pickDriver(this)">${esc(d)}</button>`).join('')}</div>`:'';document.getElementById('form-area').innerHTML=`<div class="form-card"><div class="form-title"><div class="dot" style="background:var(--green)"></div>Going out</div>${photoPreviewHtml('Invoice photo')}<div class="field"><label>Order name</label><input type="text" id="f-name" placeholder="e.g. Ahmed Store #1042" autocomplete="off"><div class="field-error" id="err-name">Enter the order name</div></div><div class="field"><label>Delivery person</label>${pills}<input type="text" id="f-driver" placeholder="Tap a saved name or type a new one" autocomplete="off"><div class="field-error" id="err-driver">Enter the delivery person</div></div><div class="form-loading" id="form-loading">Saving...</div><div class="form-btns" id="form-btns"><button class="btn-save-out" onclick="saveOutgoing()">Mark going out</button><button class="btn-cancel" onclick="hideForm()">Cancel</button></div></div>`;document.getElementById('main-btns').style.display='none';setTimeout(()=>document.getElementById('f-name').focus(),100)}
+function showDeliveredForm(){const available=orders.filter(o=>o.Status==='out');if(!available.length){showToast('No orders available to add delivery proof');currentPhoto=null;return}const options=available.map(o=>`<option value="${esc(o.ID)}">${esc(o.Name)}${o.Driver?' — '+esc(o.Driver):''}</option>`).join('');document.getElementById('form-area').innerHTML=`<div class="form-card"><div class="form-title"><div class="dot" style="background:var(--blue)"></div>Delivered</div>${photoPreviewHtml('Delivery proof')}<div class="field"><label>Which order was delivered?</label><select id="f-delivered-order" onchange="showSelectedOrder()"><option value="">-- pick an order --</option>${options}</select><div class="field-error" id="err-delivered">Select the order</div></div><div class="selected-order" id="selected-order"></div><div class="form-loading" id="form-loading">Saving...</div><div class="form-btns" id="form-btns"><button class="btn-save-delivered" onclick="saveDeliveredPhoto()">Save delivery photo</button><button class="btn-cancel" onclick="hideForm()">Cancel</button></div></div>`;document.getElementById('main-btns').style.display='none'}
+function getPhotoDisplayUrl(order,urlField,idField){if(order&&order[urlField])return order[urlField];if(order&&order[idField])return 'https://drive.google.com/thumbnail?id='+encodeURIComponent(order[idField])+'&sz=w400';return ''}
+function showSelectedOrder(){const select=document.getElementById('f-delivered-order'),box=document.getElementById('selected-order'),order=orders.find(o=>o.ID===select.value);document.getElementById('err-delivered').style.display='none';if(!order){box.style.display='none';box.innerHTML='';return}const invoiceUrl=getPhotoDisplayUrl(order,'PhotoOutUrl','PhotoOutId');const invoice=invoiceUrl?`<img src="${esc(invoiceUrl)}" alt="Invoice photo" onerror="this.style.display='none'">`:'';box.innerHTML=`<div class="selected-order-name">${esc(order.Name)}</div><div class="selected-order-meta">${esc(order.Driver||'')}</div>${invoice}`;box.style.display='block'}
+function pickDriver(btn){document.querySelectorAll('.driver-pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('f-driver').value=btn.dataset.driver||''}
+function retakePhoto(){camInput.value='';camInput.click()}
+function hideForm(){document.getElementById('form-area').innerHTML='';document.getElementById('main-btns').style.display='flex';currentPhoto=null;cameraMode=''}
+function setFormLoading(v){const b=document.getElementById('form-btns'),l=document.getElementById('form-loading');if(b)b.style.display=v?'none':'flex';if(l)l.style.display=v?'block':'none'}
+async function saveOutgoing(){const nameInput=document.getElementById('f-name'),driverInput=document.getElementById('f-driver'),name=nameInput.value.trim(),driver=driverInput.value.trim();let err=false;if(!name){document.getElementById('err-name').style.display='block';err=true}if(!driver){document.getElementById('err-driver').style.display='block';err=true}if(err)return;setFormLoading(true);try{await apiPost({action:'addOut',name,driver,photo:currentPhoto||''});hideForm();showToast('Order going out ✓');await Promise.all([loadDrivers(),loadOrders()])}catch(e){setFormLoading(false);showToast('NOT SAVED — please retry')}}
+async function saveDeliveredPhoto(){const id=document.getElementById('f-delivered-order').value;if(!id){document.getElementById('err-delivered').style.display='block';return}setFormLoading(true);try{await apiPost({action:'addDeliveredPhoto',id,photo:currentPhoto||''});hideForm();showToast('Delivery photo saved ✓');await loadOrders()}catch(e){setFormLoading(false);showToast('NOT SAVED — please retry')}}
+async function markNotDelivered(id){const order=orders.find(o=>o.ID===id);if(!order||order.Status!=='out')return;if(!window.confirm(`Mark ${order.Name} as not delivered?`))return;try{await apiPost({action:'addBack',id});showToast('Marked not delivered');await loadOrders()}catch(e){showToast('NOT SAVED — please retry')}}
+function readStoredArray(key){try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}}
+function writeStoredArray(key,v){localStorage.setItem(key,JSON.stringify(v))}
+function makeLocalId(){return window.crypto&&typeof window.crypto.randomUUID==='function'?window.crypto.randomUUID():'local-'+Date.now()+'-'+Math.random().toString(36).slice(2,10)}
+function currentTimeLabel(){return new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+function cleanDriverName(name){return String(name||'').trim().replace(/\s+/g,' ')}
+function saveDriverLocally(name){const cleaned=cleanDriverName(name);if(!cleaned)return '';const drivers=readStoredArray(DRIVER_STORAGE_KEY),existing=drivers.find(d=>String(d).toLowerCase()===cleaned.toLowerCase());if(existing)return existing;drivers.push(cleaned);writeStoredArray(DRIVER_STORAGE_KEY,drivers);return cleaned}
+async function apiPost(body){const all=readStoredArray(ORDER_STORAGE_KEY);if(body.action==='addOut'){const driver=saveDriverLocally(body.driver);const o={ID:makeLocalId(),Date:today,Name:String(body.name||'').trim(),Driver:driver,Status:'out',TimeOut:currentTimeLabel(),TimeBack:'',PhotoOutUrl:body.photo||'',PhotoDeliveredUrl:''};all.push(o);writeStoredArray(ORDER_STORAGE_KEY,all);return{success:true,id:o.ID}}if(body.action==='addDeliveredPhoto'){const o=all.find(x=>x.ID===body.id);if(!o)throw new Error('Order not found');o.PhotoDeliveredUrl=body.photo||'';o.TimeDelivered=currentTimeLabel();writeStoredArray(ORDER_STORAGE_KEY,all);return{success:true}}if(body.action==='addBack'){const o=all.find(x=>x.ID===body.id);if(!o)throw new Error('Order not found');o.Status='returned';o.TimeBack=currentTimeLabel();writeStoredArray(ORDER_STORAGE_KEY,all);return{success:true}}if(body.action==='delete'){writeStoredArray(ORDER_STORAGE_KEY,all.filter(x=>x.ID!==body.id));return{success:true}}throw new Error('Unknown local action')}
+async function loadDrivers(){const drivers=readStoredArray(DRIVER_STORAGE_KEY),all=readStoredArray(ORDER_STORAGE_KEY);all.forEach(o=>{const d=cleanDriverName(o.Driver);if(d&&!drivers.some(x=>String(x).toLowerCase()===d.toLowerCase()))drivers.push(d)});savedDrivers=drivers;writeStoredArray(DRIVER_STORAGE_KEY,savedDrivers)}
+async function loadOrders(){orders=readStoredArray(ORDER_STORAGE_KEY).filter(o=>String(o.Date||'').slice(0,10)===today);render()}
+function render(){const outCount=orders.filter(o=>o.Status==='out').length,backCount=orders.filter(o=>o.Status==='returned').length;document.getElementById('c-out').textContent=outCount+backCount;document.getElementById('c-back').textContent=backCount;document.getElementById('c-delivered').textContent=outCount;const titles={all:'All orders today',out:'Delivered orders',returned:'Not delivered orders'};document.getElementById('list-title').textContent=titles[currentFilter]||titles.all;let filtered=orders;if(currentFilter==='out')filtered=orders.filter(o=>o.Status==='out');else if(currentFilter==='returned')filtered=orders.filter(o=>o.Status==='returned');const list=document.getElementById('order-list');if(!filtered.length){const msg=!orders.length?'No orders yet today':'No orders in this category';list.innerHTML=`<div class="empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg><p>${msg}</p></div>`;return}list.innerHTML=filtered.slice().reverse().map(o=>{const isOut=o.Status==='out',invoiceUrl=getPhotoDisplayUrl(o,'PhotoOutUrl','PhotoOutId'),deliveredUrl=getPhotoDisplayUrl(o,'PhotoDeliveredUrl','PhotoDeliveredId'),hasProof=Boolean(deliveredUrl),badge=isOut?(hasProof?'<span class="order-badge badge-proof">Delivery photo ✓</span>':'<span class="order-badge badge-out">Out for delivery</span>'):'<span class="order-badge badge-back">Not delivered</span>',time=isOut?'Out '+(o.TimeOut||''):'Returned '+(o.TimeBack||''),driverText=o.Driver?' · '+esc(o.Driver):'',invoiceHtml=invoiceUrl?`<div class="photo-label">Invoice</div><img src="${esc(invoiceUrl)}" class="order-thumb" onerror="this.style.display='none'">`:'',proofHtml=deliveredUrl?`<div class="proof-wrap"><div class="proof-label">Delivery proof</div><img src="${esc(deliveredUrl)}" class="order-thumb" onerror="this.style.display='none'"></div>`:'',actions=isOut?`<div class="order-actions"><button class="order-action order-action-back" onclick="markNotDelivered('${esc(o.ID)}')">Not delivered</button></div>`:'';return `<div class="order-card ${o.Status}"><div class="order-top"><div><div class="order-name">${esc(o.Name)}</div><div class="order-meta">${time}${driverText}</div></div>${badge}</div>${invoiceHtml}${proofHtml}${actions}</div>`}).join('')}
+function esc(str){if(str==null)return '';return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+Promise.all([loadDrivers(),loadOrders()]);setInterval(loadOrders,30000);
 </script>
-
 </body>
 </html>
